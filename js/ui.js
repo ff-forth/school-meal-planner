@@ -305,6 +305,7 @@
     if (!app.poolRecords) app.poolRecords = [];
     app.poolRecords = rows.map((r) => ({
       name: r.name, vegName: r.vegName || "", wasteGPerEater: r.wasteGPerEater != null ? r.wasteGPerEater : null,
+      components: r.components || null,
     }));
     rebuildPool();
     $("drop-real").classList.add("ok");
