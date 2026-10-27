@@ -35,10 +35,149 @@
         .map((s) => s.trim().toLowerCase())
         .filter(Boolean),
       requiredTags: required,
+      componentRules: parseComponentRules(input.componentRules),
     };
   }
 
   function dayIndexOf(w, d) { return w * D.DAYS.length + d; }
+
+  // ---- Component rules (adjustable max/min frequency per component) ----
+  // One rule per line: "<component>, max 2 g/v" / "<component>, minst 1 g/v" /
+  // "<component>, max 1 g/14d". A line without max/minst is a guideline only
+  // (shown in the summary, not enforced). Matching is on the meal's
+  // protein/starch/prep components (diacritic-normalised substring).
+  const COMPONENT_RULE_RE = /^\s*([^,]+?)\s*,\s*(max|minst)\s+(\d+)\s*g\s*\/\s*(v|14d)\s*$/i;
+  const COMPONENT_RULE_FIELDS = ["protein", "starch", "prep"];
+
+  function parseComponentRules(text) {
+    const rules = [];
+    for (const line of String(text || "").split(/\r?\n/)) {
+      const t = line.trim();
+      if (!t) continue;
+      const m = t.match(COMPONENT_RULE_RE);
+      if (!m) continue;
+      const name = m[1].trim();
+      const kind = m[2].toLowerCase() === "max" ? "max" : "min";
+      const count = parseInt(m[3], 10);
+      const period = m[4].toLowerCase() === "14d" ? "14d" : "week";
+      if (!name || !count) continue;
+      rules.push({ name, kind, count, period, text: t });
+    }
+    return rules;
+  }
+
+  // Does a meal contain this component (by its normalised component value)?
+  function mealHasComponent(meal, name) {
+    const comp = meal.components || {};
+    const norm = D.slugify(name); // strips diacritics, lowercases
+    if (!norm) return false;
+    for (const f of COMPONENT_RULE_FIELDS) {
+      const v = comp[f];
+      if (v && D.slugify(v).includes(norm)) return true;
+    }
+    return false;
+  }
+
+  // Count how many times a component appears in the plan within `windowDays`
+  // days ending at `dayIdx` (inclusive).
+  function componentCountInWindow(plan, dayIdx, windowDays, has) {
+    let count = 0;
+    const start = Math.max(0, dayIdx - windowDays + 1);
+    for (let i = start; i <= dayIdx; i++) {
+      const meal = plan[Math.floor(i / D.DAYS.length)][i % D.DAYS.length].meal;
+      if (meal && has(meal)) count++;
+    }
+    return count;
+  }
+
+  // Count how many times a component appears in a given week.
+  function componentCountInWeek(plan, weekIdx, has) {
+    let count = 0;
+    for (let d = 0; d < D.DAYS.length; d++) {
+      const meal = plan[weekIdx][d].meal;
+      if (meal && has(meal)) count++;
+    }
+    return count;
+  }
+
+  // Penalty for max-rules (over the limit in the relevant window).
+  function componentMaxPenalty(state, rules) {
+    let pen = 0;
+    for (const r of rules) {
+      if (r.kind !== "max") continue;
+      const has = (m) => mealHasComponent(m, r.name);
+      const windowDays = r.period === "14d" ? 14 : D.DAYS.length;
+      for (let w = 0; w < D.WEEKS; w++)
+        for (let d = 0; d < D.DAYS.length; d++) {
+          const dayIdx = dayIndexOf(w, d);
+          const c = componentCountInWindow(state.plan, dayIdx, windowDays, has);
+          if (c > r.count) pen += (c - r.count) * 3;
+        }
+    }
+    return pen;
+  }
+
+  // Penalty for min-rules (a week with fewer than the required count).
+  function componentMinPenalty(state, rules) {
+    let pen = 0;
+    for (const r of rules) {
+      if (r.kind !== "min") continue;
+      const has = (m) => mealHasComponent(m, r.name);
+      for (let w = 0; w < D.WEEKS; w++) {
+        const c = componentCountInWeek(state.plan, w, has);
+        if (c < r.count) pen += (r.count - c) * 4;
+      }
+    }
+    return pen;
+  }
+
+  // Scoring bonus/penalty for a candidate meal against the component rules.
+  function componentRuleScore(meal, dayIdx, state, rules) {
+    let score = 0;
+    const reasons = [];
+    for (const r of rules) {
+      if (!mealHasComponent(meal, r.name)) continue;
+      const has = (m) => mealHasComponent(m, r.name);
+      if (r.kind === "max") {
+        const windowDays = r.period === "14d" ? 14 : D.DAYS.length;
+        const c = componentCountInWindow(state.plan, dayIdx, windowDays, has);
+        if (c >= r.count) {
+          score -= 1.5;
+          reasons.push(`${r.name} överskrider ${r.count} g/${r.period === "14d" ? "14d" : "v"}`);
+        }
+      } else {
+        const c = componentCountInWeek(state.plan, Math.floor(dayIdx / D.DAYS.length), has);
+        if (c < r.count) {
+          score += 1.2;
+          reasons.push(`${r.name} behövs denna vecka`);
+        }
+      }
+    }
+    return { score, reasons };
+  }
+
+  // Component-rule issues for the finished plan (status bar).
+  function componentIssues(plan, rules) {
+    const issues = [];
+    const state = { plan };
+    for (const r of rules) {
+      const has = (m) => mealHasComponent(m, r.name);
+      if (r.kind === "max") {
+        const windowDays = r.period === "14d" ? 14 : D.DAYS.length;
+        let worst = 0;
+        for (let w = 0; w < D.WEEKS; w++)
+          for (let d = 0; d < D.DAYS.length; d++)
+            worst = Math.max(worst, componentCountInWindow(plan, dayIndexOf(w, d), windowDays, has));
+        if (worst > r.count) issues.push(`${r.name}: max ${r.count} g/${r.period === "14d" ? "14d" : "v"} överskrids (högst ${worst})`);
+      } else {
+        let weeksMet = 0;
+        for (let w = 0; w < D.WEEKS; w++)
+          if (componentCountInWeek(plan, w, has) >= r.count) weeksMet++;
+        if (weeksMet < D.WEEKS) issues.push(`${r.name}: minst ${r.count} g/v uppfyllt i ${weeksMet}/${D.WEEKS} veckor`);
+      }
+    }
+    return issues;
+  }
 
   // Hard constraints: allergens, variety gap, max uses.
   function hardOK(meal, dayIdx, state, criteria, relaxGap) {
@@ -57,9 +196,16 @@
 
   // Score a candidate meal for a slot. Returns {score, reasons:[]}.
   function scoreMeal(meal, ctx, criteria, mined) {
-    const { prevDay, weekIdx } = ctx;
+    const { prevDay, weekIdx, dayIdx, state } = ctx;
     let score = 0;
     const reasons = [];
+
+    // Component rules (max/min frequency)
+    if (criteria.componentRules && criteria.componentRules.length) {
+      const cr = componentRuleScore(meal, dayIdx, state, criteria.componentRules);
+      score += cr.score;
+      reasons.push(...cr.reasons);
+    }
 
     // Historical frequency of this exact meal
     const sup = mined.freq.byType && mined.dayCount
@@ -138,7 +284,7 @@
     const prevDay = prevDayIdx >= 0
       ? state.plan[Math.floor(prevDayIdx / D.DAYS.length)][prevDayIdx % D.DAYS.length]
       : null;
-    const ctx = { prevDay, weekIdx: w, plan: state.plan, state };
+    const ctx = { prevDay, weekIdx: w, dayIdx, plan: state.plan, state };
 
     const out = [];
     for (const meal of state.pool) {
@@ -229,6 +375,11 @@
         for (let i = 1; i < days.length; i++) if (days[i] - days[i - 1] < gapDays) pen += 1.5;
       }
     }
+    // Component rules (max/min frequency)
+    if (criteria.componentRules && criteria.componentRules.length) {
+      pen += componentMaxPenalty(state, criteria.componentRules);
+      pen += componentMinPenalty(state, criteria.componentRules);
+    }
     return pen;
   }
 
@@ -272,7 +423,7 @@
     const prevDay = prevDayIdx >= 0
       ? state.plan[Math.floor(prevDayIdx / D.DAYS.length)][prevDayIdx % D.DAYS.length]
       : null;
-    const ctx = { prevDay, weekIdx: w, plan: state.plan, state };
+    const ctx = { prevDay, weekIdx: w, dayIdx, plan: state.plan, state };
     let best = null, bestScore = -Infinity;
     for (const meal of state.pool) {
       const uses = state.uses.get(meal.id) || 0;
@@ -339,6 +490,11 @@
     for (const [id, n] of uses) if (n > criteria.maxUses) varietyViolations++;
     if (varietyViolations) issues.push(`${varietyViolations} meal(s) exceed the max-uses cap`);
 
+    // Component rules (max/min frequency)
+    if (criteria.componentRules && criteria.componentRules.length) {
+      issues.push(...componentIssues(plan, criteria.componentRules));
+    }
+
     const avgWaste = wasteN ? wasteSum / wasteN : null;
     if (criteria.maxAvgWaste > 0 && avgWaste != null && avgWaste > criteria.maxAvgWaste) {
       issues.push(`average waste ${avgWaste.toFixed(1)} g/eater exceeds ${criteria.maxAvgWaste}`);
@@ -361,5 +517,7 @@
     alternatives,
     evaluatePlan,
     dayIndexOf,
+    parseComponentRules,
+    mealHasComponent,
   };
 })(window);

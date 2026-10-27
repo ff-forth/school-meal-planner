@@ -48,6 +48,7 @@
       ["Max. genomsnittligt svinn (g/ätande)", criteria.maxAvgWaste || "(ingen)"],
       ["Uteslutna allergener", criteria.excludedAllergens.join(", ") || "(inga)"],
       ["Önskade teman", criteria.requiredTags.map((r) => `${r.tag}:${r.min}/v`).join(", ") || "(inga)"],
+      ["Komponentregler", (criteria.componentRules || []).map((r) => `${r.name} ${r.kind} ${r.count} g/${r.period === "14d" ? "14d" : "v"}`).join("; ") || "(inga)"],
     ];
     const ws2 = XLSX.utils.aoa_to_sheet(sumAoa);
     ws2["!cols"] = [{ wch: 34 }, { wch: 34 }];

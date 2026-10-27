@@ -74,6 +74,7 @@
       maxAvgWaste: $("c-max-waste").value,
       excludedAllergens: $("c-allergens").value,
       required: $("c-required").value,
+      componentRules: $("c-components").value,
     });
   }
 
@@ -423,6 +424,11 @@
     for (const req of c.requiredTags) {
       const met = ev.issues.find((i) => i.startsWith(req.tag));
       chips.push(chip(met ? "warn" : "ok", `${req.tag}: ${met ? met.split(": ")[1] : "uppfyllt"}`));
+    }
+    for (const r of c.componentRules || []) {
+      const issue = ev.issues.find((i) => i.startsWith(r.name + ":"));
+      const label = r.name + (r.kind === "max" ? ` ≤${r.count}/${r.period === "14d" ? "14d" : "v"}` : ` ≥${r.count}/v`);
+      chips.push(chip(issue ? "warn" : "ok", `${issue ? label + " ⚠" : label + " ✓"}`));
     }
     $("status-bar").innerHTML = chips.join(" ");
   }

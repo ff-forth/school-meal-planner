@@ -91,9 +91,25 @@
             <label class="lbl" for="c-required">Önskade teman (format: tema:min/vecka)</label>
             <input type="text" id="c-required" value="" class="inp" placeholder="marocko:1, kina:1" />
           </div>
+          <div class="field">
+            <label class="lbl" for="c-components">Komponentregler (en per rad)</label>
+            <textarea id="c-components" rows="6" class="inp" placeholder="Fläsk, max 2 g/v">Fläsk, max 2 g/v
+Korv, max 1 g/14d
+Ris, max 1 g/14d
+Soppa, 1 g/v
+Fisk, minst 1 g/v
+Kyckling, minst 1 g/v</textarea>
+          </div>
           <p class="helper-text">
             Allergener känns igen från rätten (fisk, skalbagge, gluten, mjölk). Önskade teman använder
             rättens <code>theme</code>, t.ex. <code>marocko:1</code> = minst en <code>marocko</code>-rätt per vecka.
+          </p>
+          <p class="helper-text">
+            <b>Komponentregler</b> begränsar hur ofta en komponent får förekomma:
+            <code>max 2 g/v</code> (max 2 gånger per vecka), <code>max 1 g/14d</code> (max 1 gång
+            per 14 dagar), <code>minst 1 g/v</code> (minst 1 gång per vecka). Rader utan
+            <code>max</code>/<code>minst</code> (t.ex. <code>Soppa, 1 g/v</code>) är riktlinjer och
+            påverkar inte planen.
           </p>
         </div>
       </section>
