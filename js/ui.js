@@ -834,6 +834,7 @@
 
     const itemHTML = (m) => {
       const chips = [];
+      const cat = categoryOf(m); if (cat) chips.push(chipHTML(cat.icon, cat.label, cat.cls));
       const st = starchOf(m); if (st) chips.push(chipHTML(st.icon, st.label, st.cls));
       const sp = soupOf(m); if (sp) chips.push(chipHTML(sp.icon, sp.label, sp.cls));
       if (m.components && m.components.theme) chips.push(chipHTML(null, m.components.theme, "badge-info"));
