@@ -111,17 +111,25 @@
     return count;
   }
 
+  // Count of a component in the period window containing `dayIdx`.
+  // "week" -> the calendar week (a full 5-day block, so it is never truncated
+  //           at the edges of the plan). "14d" -> the rolling 14-day window.
+  function componentCountInPeriod(plan, dayIdx, period, has) {
+    if (period === "week") {
+      return componentCountInWeek(plan, Math.floor(dayIdx / D.DAYS.length), has);
+    }
+    return componentCountInWindow(plan, dayIdx, 14, has);
+  }
+
   // Penalty for max/exact-rules (over the limit in the relevant window).
   function componentMaxPenalty(state, rules) {
     let pen = 0;
     for (const r of rules) {
       if (r.kind !== "max" && r.kind !== "exact") continue;
       const has = (m) => mealHasComponent(m, r.name);
-      const windowDays = r.period === "14d" ? 14 : D.DAYS.length;
       for (let w = 0; w < D.WEEKS; w++)
         for (let d = 0; d < D.DAYS.length; d++) {
-          const dayIdx = dayIndexOf(w, d);
-          const c = componentCountInWindow(state.plan, dayIdx, windowDays, has);
+          const c = componentCountInPeriod(state.plan, dayIndexOf(w, d), r.period, has);
           if (c > r.count) pen += (c - r.count) * 3;
         }
     }
@@ -134,11 +142,9 @@
     for (const r of rules) {
       if (r.kind !== "min" && r.kind !== "exact") continue;
       const has = (m) => mealHasComponent(m, r.name);
-      const windowDays = r.period === "14d" ? 14 : D.DAYS.length;
       for (let w = 0; w < D.WEEKS; w++)
         for (let d = 0; d < D.DAYS.length; d++) {
-          const dayIdx = dayIndexOf(w, d);
-          const c = componentCountInWindow(state.plan, dayIdx, windowDays, has);
+          const c = componentCountInPeriod(state.plan, dayIndexOf(w, d), r.period, has);
           if (c < r.count) pen += (r.count - c) * 4;
         }
     }
@@ -146,8 +152,9 @@
   }
 
   // Hard cap for upper-bound rules (max / exakt): would placing `meal` at
-  // `dayIdx` push any window over the rule's count? Uses per-rule prefix sums
-  // (precomputed once per candidate batch) so the per-candidate check is cheap.
+  // `dayIdx` push the relevant window over the rule's count? "week" uses the
+  // calendar week; "14d" uses a rolling 14-day window (per-rule prefix sums,
+  // precomputed once per candidate batch, so the per-candidate check is cheap).
   // `capPrefix` entries: { r, P, W, curHas } where P is the prefix count of the
   // rule's component across the current plan and curHas is whether the slot's
   // current meal already has the component.
@@ -157,6 +164,11 @@
       if (!mealHasComponent(meal, r.name)) continue;
       const d = 1 - (curHas ? 1 : 0); // +1 only if this meal adds the component
       if (d <= 0) continue;
+      if (r.period === "week") {
+        const ws = Math.floor(dayIdx / D.DAYS.length) * D.DAYS.length;
+        if (P[ws + D.DAYS.length] - P[ws] + d > r.count) return true;
+        continue;
+      }
       for (let e = dayIdx; e < Math.min(total, dayIdx + W); e++) {
         const start = Math.max(0, e - W + 1);
         if (P[e + 1] - P[start] + d > r.count) return true;
@@ -190,8 +202,7 @@
     for (const r of rules) {
       if (!mealHasComponent(meal, r.name)) continue;
       const has = (m) => mealHasComponent(m, r.name);
-      const windowDays = r.period === "14d" ? 14 : D.DAYS.length;
-      const c = componentCountInWindow(state.plan, dayIdx, windowDays, has);
+      const c = componentCountInPeriod(state.plan, dayIdx, r.period, has);
       if (r.kind === "max" || r.kind === "exact") {
         if (c >= r.count) {
           score -= 1.5;
@@ -222,13 +233,12 @@
     const issues = [];
     for (const r of rules) {
       const has = (m) => mealHasComponent(m, r.name);
-      const windowDays = r.period === "14d" ? 14 : D.DAYS.length;
       const per = r.period === "14d" ? "14d" : "v";
       if (r.kind === "max" || r.kind === "exact") {
         let worst = 0;
         for (let w = 0; w < D.WEEKS; w++)
           for (let d = 0; d < D.DAYS.length; d++)
-            worst = Math.max(worst, componentCountInWindow(plan, dayIndexOf(w, d), windowDays, has));
+            worst = Math.max(worst, componentCountInPeriod(plan, dayIndexOf(w, d), r.period, has));
         if (worst > r.count) issues.push(`${r.name}: max ${r.count} g/${per} överskrids (högst ${worst})`);
       }
       if (r.kind === "min" || r.kind === "exact") {
@@ -236,13 +246,13 @@
         for (let w = 0; w < D.WEEKS; w++)
           for (let d = 0; d < D.DAYS.length; d++) {
             windows++;
-            if (componentCountInWindow(plan, dayIndexOf(w, d), windowDays, has) >= r.count) windowsMet++;
+            if (componentCountInPeriod(plan, dayIndexOf(w, d), r.period, has) >= r.count) windowsMet++;
           }
         if (r.kind === "exact") {
           let worst = 0, best = 99;
           for (let w = 0; w < D.WEEKS; w++)
             for (let d = 0; d < D.DAYS.length; d++) {
-              const c = componentCountInWindow(plan, dayIndexOf(w, d), windowDays, has);
+              const c = componentCountInPeriod(plan, dayIndexOf(w, d), r.period, has);
               worst = Math.max(worst, c); best = Math.min(best, c);
             }
           if (worst > r.count || best < r.count) issues.push(`${r.name}: exakt ${r.count} g/${per} ej uppfyllt (min ${best}, max ${worst})`);
