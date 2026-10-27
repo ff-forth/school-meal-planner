@@ -350,6 +350,7 @@
     app.dayRecords = records;
     app.pool = records.length ? D.buildMealPool(records) : null;
     applyEstimates();
+    renderPoolOverview();
     checkReady();
     return joined;
   }
@@ -619,6 +620,7 @@
     // without going back to setup).
     $("btn-pool").classList.remove("hidden");
     $("btn-plan").classList.remove("hidden");
+    renderPoolOverview();
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
   function showSetupPage() {
@@ -746,6 +748,55 @@
     return `<div class="plan-table-stats">` +
       `<div class="plan-table-stats-title">Komponenter · 8 veckor</div>` +
       `<div class="plan-table-stats-row">${items}</div></div>`;
+  }
+
+  // ---------- Pool overview (all meals currently in the pool) ----------
+  // A searchable, collapsible list of every unique meal in the pool, shown on
+  // the plan page so you can see/verify what's loaded (names + component chips
+  // + waste). Re-rendered whenever the pool changes.
+  function renderPoolOverview() {
+    const wrap = $("pool-overview");
+    if (!wrap) return;
+    const count = $("pool-count");
+    if (count) count.textContent = app.pool ? `· ${app.pool.length} måltider` : "";
+    if (!app.pool || !app.pool.length) {
+      wrap.innerHTML = `<p class="pool-empty">Ingen pool laddad. Ladda en pool (1. Ladda pool) eller importera data.</p>`;
+      return;
+    }
+    const esc = (s) => String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+    const q = ($("pool-search") ? $("pool-search").value : "").trim().toLowerCase();
+    const meals = app.pool.slice().sort((a, b) => a.name.localeCompare(b.name, "sv"))
+      .filter((m) => !q || m.name.toLowerCase().includes(q) || (m.vegName || "").toLowerCase().includes(q));
+    if (!meals.length) {
+      wrap.innerHTML = `<p class="pool-empty">Inga måltider matchar “${esc(q)}”.</p>`;
+      return;
+    }
+    const items = meals.map((m) => {
+      const chips = [];
+      const cat = categoryOf(m); if (cat) chips.push(chipHTML(cat.icon, cat.label, cat.cls));
+      const st = starchOf(m); if (st) chips.push(chipHTML(st.icon, st.label, st.cls));
+      const sp = soupOf(m); if (sp) chips.push(chipHTML(sp.icon, sp.label, sp.cls));
+      if (m.components && m.components.theme) chips.push(chipHTML(null, m.components.theme, "badge-info"));
+      const wv = m.wasteGPerEater != null ? m.wasteGPerEater : m.wasteEstimate;
+      const est = m.wasteGPerEater == null;
+      const waste = wv != null ? `<span class="pool-item-waste${est ? " est" : ""}" title="${est ? "Uppskattat" : "Mätt"}">${wv} g${est ? "*" : ""}</span>` : "";
+      return `<div class="pool-item" title="${esc(m.name)}${m.vegName ? " (veg: " + esc(m.vegName) + ")" : ""}">` +
+        `<span class="pool-item-name">${esc(m.name)}</span>` +
+        (chips.length ? `<span class="pool-item-chips">${chips.join("")}</span>` : "") +
+        waste +
+        `</div>`;
+    }).join("");
+    wrap.innerHTML = `<div class="pool-list">${items}</div>`;
+  }
+
+  function setupPoolOverview() {
+    const search = $("pool-search"), toggle = $("pool-toggle"), body = $("pool-overview");
+    if (search) search.addEventListener("input", renderPoolOverview);
+    if (toggle && body) toggle.addEventListener("click", () => {
+      const hidden = body.classList.toggle("hidden");
+      toggle.textContent = hidden ? "▼ Visa" : "▲ Dölj";
+      toggle.setAttribute("aria-expanded", String(!hidden));
+    });
   }
 
   // "Alla" overview as a table: 5 weekday rows × 8 week columns, tags only.
@@ -1066,6 +1117,7 @@
   // Header load buttons are available from the start (setup and plan views).
   $("btn-pool").classList.remove("hidden");
   $("btn-plan").classList.remove("hidden");
+  setupPoolOverview();
   // Prefer a school's waste: re-fill the pool and re-render if a plan exists.
   $("school-select").addEventListener("change", (e) => {
     app.targetSchool = e.target.value;
