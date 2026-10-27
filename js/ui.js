@@ -410,30 +410,42 @@
   }
 
 
-  // ---------- Import a skolmat.info JSON file ----------
-  async function handleSkolmatFile(file) {
+  // ---------- Import skolmat.info JSON file(s) ----------
+  // Accepts one or more JSON files (one per week). Records are merged by date
+  // (same rule as the dropzone) so several weeks combine into one pool; a later
+  // file wins on a date that appears in two.
+  async function handleSkolmatFiles(files) {
     const status = $("status-real");
-    try {
-      const text = await file.text();
-      const out = RI.parseSkolmatJSON(text);
-      if (!out.records.length) {
-        status.textContent = "⚠ " + (out.error || "Ingen matsedel hittades i filen.");
-        status.style.color = "var(--danger)";
-        return;
-      }
-      app.dayRecords = out.records;
-      app.pool = D.buildMealPool(out.records);
-      applyEstimates();
-      const who = out.facilityName ? ` · ${out.facilityName}` : "";
-      status.textContent = `✓ skolmat.info: ${out.records.length} dagar${who} · ${app.pool.length} unika måltider`;
-      status.style.color = "var(--primary)";
-      $("drop-real").classList.add("ok");
-      markFileStatus("menu", true, `skolmat.info (${out.records.length} dagar)`);
-      checkReady();
-    } catch (err) {
-      status.textContent = "⚠ Kunde inte läsa filen: " + err.message;
-      status.style.color = "var(--danger)";
+    const byDate = new Map();
+    let facilityName = null;
+    const errors = [];
+    for (const f of files) {
+      try {
+        const out = RI.parseSkolmatJSON(await f.text());
+        if (!out.records.length) { errors.push(`${f.name}: ${out.error || "inga dagar"}`); continue; }
+        for (const r of out.records) byDate.set(r.date, r);
+        if (out.facilityName) facilityName = out.facilityName;
+      } catch (err) { errors.push(`${f.name}: ${err.message}`); }
     }
+    const records = Array.from(byDate.values()).sort((a, b) =>
+      a.date < b.date ? -1 : a.date > b.date ? 1 : 0
+    );
+    if (!records.length) {
+      status.textContent = "⚠ " + (errors.join(" · ") || "Ingen matsedel hittades i filen.");
+      status.style.color = "var(--danger)";
+      return;
+    }
+    app.dayRecords = records;
+    app.pool = D.buildMealPool(records);
+    applyEstimates();
+    const who = facilityName ? ` · ${facilityName}` : "";
+    const multi = files.length > 1 ? ` (${files.length} filer)` : "";
+    const errs = errors.length ? ` · ${errors.length} fil(er) misslyckades` : "";
+    status.textContent = `✓ skolmat.info: ${records.length} dagar${who} · ${app.pool.length} unika måltider${multi}${errs}`;
+    status.style.color = "var(--primary)";
+    $("drop-real").classList.add("ok");
+    markFileStatus("menu", true, `skolmat.info (${records.length} dagar)`);
+    checkReady();
   }
 
   function setupSkolmatImport() {
@@ -441,9 +453,9 @@
     if (!btn || !input) return;
     btn.addEventListener("click", () => input.click());
     input.addEventListener("change", () => {
-      const f = input.files && input.files[0];
-      if (f) handleSkolmatFile(f);
+      const files = Array.from(input.files || []);
       input.value = "";
+      if (files.length) handleSkolmatFiles(files);
     });
   }
 
