@@ -21,6 +21,17 @@
   // Swedish day names so an exported plan re-imports cleanly (the UI is Swedish).
   const DAY_SV = ["Måndag", "Tisdag", "Onsdag", "Torsdag", "Fredag"];
 
+  // ISO week number for an ISO date (yyyy-mm-dd) — the real calendar week, so a
+  // plan starting in week 38 shows "38", not "1". Mirrors ui.js isoWeek.
+  function isoWeek(iso) {
+    if (!iso) return null;
+    const [y, m, d] = iso.split("-").map(Number);
+    const dt = new Date(Date.UTC(y, m - 1, d));
+    dt.setUTCDate(dt.getUTCDate() + 4 - (dt.getUTCDay() || 7));
+    const yearStart = Date.UTC(dt.getUTCFullYear(), 0, 1);
+    return Math.ceil(((dt - yearStart) / 86400000 + 1) / 7);
+  }
+
   // Export the finished 8-week plan.
   // plan: { [weekIdx]: { [dayIdx]: { date, meal } } } where meal is a Meal or null.
   function exportPlan(plan, criteria) {
@@ -31,8 +42,11 @@
         const day = plan[w] && plan[w][d];
         if (!day) continue;
         const meal = day.meal;
+        // Real calendar week (from the date), falling back to the positional
+        // index when a slot has no date.
+        const week = isoWeek(day.date) != null ? isoWeek(day.date) : w + 1;
         aoa.push([
-          w + 1, DAY_SV[d], day.date || "",
+          week, DAY_SV[d], day.date || "",
           meal ? meal.name : "",
           meal && meal.vegName ? meal.vegName : "",
           meal && meal.wasteGPerEater != null ? meal.wasteGPerEater : "",

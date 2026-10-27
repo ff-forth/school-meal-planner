@@ -264,11 +264,17 @@
       return;
     }
     const byName = new Map((app.pool || []).map((m) => [m.name, m]));
+    // Position weeks by DATE, not by the "Vecka" column: that column is the real
+    // calendar week (e.g. 38–45) in new exports and a 1–8 index in old ones, so
+    // it can't be trusted as an array index. Sort the dated rows and group them
+    // into consecutive 5-day blocks (block 0 → week 0, …).
+    const dated = rows.filter((r) => r.date).sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
     const plan = [];
     let matched = 0;
-    for (const r of rows) {
-      const w = (r.week || 1) - 1;
-      if (w < 0 || w >= D.WEEKS) continue;
+    for (let i = 0; i < dated.length; i++) {
+      const r = dated[i];
+      const w = Math.floor(i / D.DAYS.length);
+      if (w >= D.WEEKS) continue;
       // Accept Swedish (app export) or English (D.DAYS) day names.
       const d = DAY_SV.indexOf(r.weekday) >= 0 ? DAY_SV.indexOf(r.weekday) : D.DAYS.indexOf(r.weekday);
       if (d < 0) continue;
@@ -276,7 +282,7 @@
       const meal = byName.get(r.meal);
       if (meal) matched++;
       plan[w][d] = {
-        date: r.date || "",
+        date: r.date,
         meal: meal || { name: r.meal, vegName: r.veg || "", components: {}, wasteGPerEater: isFinite(r.waste) ? r.waste : null },
       };
     }
