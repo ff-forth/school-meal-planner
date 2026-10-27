@@ -246,7 +246,32 @@
   async function handleRealFiles(files) {
     const status = $("status-real");
     const loader = RI.createLoader();
-    for (const f of files) {
+    // Split .json (skolmat.info) files from .xlsx files. JSON files are the
+    // bookmarklet's output and are parsed separately; .xlsx files are
+    // classified by name (menu / svinn / portioner / rapport).
+    const jsonFiles = files.filter((f) => /\.json$/i.test(f.name));
+    const xlsxFiles = files.filter((f) => !/\.json$/i.test(f.name));
+    for (const f of jsonFiles) {
+      try {
+        const out = RI.parseSkolmatJSON(await f.text());
+        if (!out.records.length) {
+          markFileStatus("menu", false, `${f.name} — ${out.error || "inga dagar"}`);
+        } else {
+          // Merge by date (same rule as the xlsx menu path) so overlapping
+          // files don't double-count a day.
+          const byDate = new Map((loader.menuDays || []).map((d) => [d.date, d]));
+          for (const r of out.records) byDate.set(r.date, r);
+          loader.menuDays = Array.from(byDate.values()).sort((a, b) =>
+            a.date < b.date ? -1 : a.date > b.date ? 1 : 0
+          );
+          loader.jsonFacility = out.facilityName || loader.jsonFacility;
+          markFileStatus("menu", true, `${f.name} (${out.records.length} dagar)`);
+        }
+      } catch (err) {
+        markFileStatus("menu", false, `${f.name} — ${err.message}`);
+      }
+    }
+    for (const f of xlsxFiles) {
       const kind = RI.classify(f.name);
       try {
         const buf = await IO.readArrayBuffer(f);
@@ -279,8 +304,11 @@
     app.dayRecords = out.records;
     app.pool = D.buildMealPool(out.records);
     applyEstimates();
-    let line = `✓ ${out.joined}/${out.total} dagar ihopslagna · ${app.pool.length} unika måltider · ` +
-      `svinn ${out.stats.min}–${out.stats.max} g/ätande (medelvärde ${out.stats.mean})`;
+    const who = loader.jsonFacility ? ` · ${loader.jsonFacility}` : "";
+    let line = `✓ ${out.total} dagar${who} · ${app.pool.length} unika måltider`;
+    if (out.stats.min != null) {
+      line += ` · svinn ${out.stats.min}–${out.stats.max} g/ätande (medelvärde ${out.stats.mean})`;
+    }
     if (app.wasteFilled) line += ` · ${app.wasteFilled} fyllde ur svinn från rapport`;
     status.textContent = line;
     status.style.color = "var(--primary)";
