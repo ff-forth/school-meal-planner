@@ -281,7 +281,15 @@
       return;
     }
     app.plan = plan;
+    // Make the swap/replace popover work right after a plan import: it needs
+    // criteria + mined patterns, which a fresh generate would have set. Use the
+    // current criteria (from the last generate or the defaults) and mine the
+    // current day records so "Byt" offers candidates the same way it does after
+    // generating a plan.
+    app.criteria = readCriteria();
+    app.mined = M.mine(app.dayRecords || []);
     app.state = { plan, pool: app.pool, uses: new Map(), lastUsed: new Map() };
+    rebuildState();
     app.viewWeek = "all";
     renderWeekTabs();
     renderPlan();
