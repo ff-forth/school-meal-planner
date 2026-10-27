@@ -231,11 +231,24 @@ code { background: var(--bg-body); border: 1px solid var(--border-light); border
 .pool-search { margin-left: auto; min-width: 10rem; max-width: 22rem; }
 .menu-week-button-pool { margin-left: 0.5rem; border-left: 1px solid var(--border-light); }
 .pool-list {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(24rem, 1fr));
-  gap: 0.35rem; align-content: start; max-height: 24rem; overflow-y: auto;
+  display: grid; gap: var(--space-3, 1rem); align-content: start;
+  max-height: 24rem; overflow-y: auto; padding-right: 0.25rem;
 }
-.pool-list-head { grid-column: 1 / -1; }
+.pool-list-head { position: sticky; top: 0; background: var(--bg-body); z-index: 1; }
 .pool-count { font-size: 0.8rem; font-weight: 500; color: var(--text-muted); }
+.pool-group { display: grid; gap: 0.35rem; }
+.pool-group-head {
+  display: flex; align-items: center; gap: 0.4rem;
+  font-size: 0.82rem; font-weight: 700; color: var(--text-main);
+  padding-bottom: 0.15rem; border-bottom: 1px solid var(--border-light);
+}
+.pool-group-title { display: inline-flex; align-items: center; gap: 0.3rem; }
+.pool-group-count {
+  font-size: 0.72rem; font-weight: 600; color: var(--text-muted);
+  background: var(--bg-body); border: 1px solid var(--border-light);
+  border-radius: 999px; padding: 0 0.4rem; line-height: 1.4;
+}
+.pool-group-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(22rem, 1fr)); gap: 0.35rem; }
 .pool-empty { color: var(--text-light); font-size: 0.85rem; padding: 0.5rem 0; }
 .pool-item {
   display: flex; align-items: center; gap: 0.5rem;

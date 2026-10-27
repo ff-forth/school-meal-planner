@@ -56,8 +56,13 @@
     wheat: '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 22 16 8"/><path d="M3.47 12.53 5 11l1.5 1.5a1 1 0 0 1 0 1.4l-1.5 1.5a1 1 0 0 1-1.4 0L2.1 13.9a1 1 0 0 1 0-1.4Z"/><path d="M7.47 8.53 9 7l1.5 1.5a1 1 0 0 1 0 1.4L9 11.4a1 1 0 0 1-1.4 0L6.1 9.9a1 1 0 0 1 0-1.4Z"/><path d="M11.47 4.53 13 3l1.5 1.5a1 1 0 0 1 0 1.4L13 7.4a1 1 0 0 1-1.4 0L10.1 5.9a1 1 0 0 1 0-1.4Z"/><path d="m12.5 12.5 2.1 2.1a1 1 0 0 1 0 1.4l-2.1 2.1a1 1 0 0 1-1.4 0L9 16"/><path d="m14.5 6.5 2.1 2.1a1 1 0 0 1 0 1.4L14.5 12a1 1 0 0 1-1.4 0L11 9.9"/></svg>',
     soup: '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21a9 9 0 0 0 9-9H3a9 9 0 0 0 9 9Z"/><path d="M7 21h10"/><path d="M7 3v2"/><path d="M12 2v3"/><path d="M17 3v2"/></svg>',
   };
+  // Lowercase + strip diacritics (ö→o) so hand-typed Swedish matches the
+  // patterns below ("kött" → "kott").
+  const normP = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   function categoryOf(meal) {
-    const p = (meal.components && meal.components.protein ? meal.components.protein : "");
+    // The protein column is typed by hand in the pool file, so case/diacritics
+    // vary (e.g. "Lax", "Kött"). starchOf/soupOf already normalize the same way.
+    const p = normP(meal.components && meal.components.protein);
     if (/fisk|lax|tunfisk|skaldjur|krabba/.test(p)) return { label: "Fisk", icon: "fish", cls: "badge-info" };
     if (/kyckling|fågel|pullad|gyros/.test(p)) return { label: "Kyckling", icon: "drumstick", cls: "badge-neutral" };
     if (/soja|vego|balj|kikarts|linse|falafel|ost/.test(p)) return { label: "Vegetariskt", icon: "leaf", cls: "badge-success" };
@@ -804,15 +809,31 @@
     }
     const esc = (s) => String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/"/g, "&quot;");
     const q = ($("pool-search") ? $("pool-search").value : "").trim().toLowerCase();
-    const meals = app.pool.slice().sort((a, b) => a.name.localeCompare(b.name, "sv"))
-      .filter((m) => !q || m.name.toLowerCase().includes(q) || (m.vegName || "").toLowerCase().includes(q));
+    const meals = app.pool.filter((m) => !q || m.name.toLowerCase().includes(q) || (m.vegName || "").toLowerCase().includes(q));
     if (!meals.length) {
       wrap.innerHTML = `<p class="pool-empty">Inga måltider matchar “${esc(q)}”.</p>`;
       return;
     }
-    const items = meals.map((m) => {
+
+    // Group by protein category so the pool reads as organized sections
+    // (Fisk / Kyckling / …) instead of one flat alphabetical list. Meals with
+    // no recognizable protein land in "Övrigt". Within a group, sort by name.
+    const groups = new Map(); // label -> { icon, cls, meals: [] }
+    for (const m of meals) {
+      const cat = categoryOf(m);
+      const key = cat ? cat.label : "Övrigt";
+      if (!groups.has(key)) groups.set(key, { icon: cat ? cat.icon : null, cls: cat ? cat.cls : "badge-neutral", meals: [] });
+      groups.get(key).meals.push(m);
+    }
+    const order = ["Fisk", "Kyckling", "Vegetariskt", "Korv", "Fläsk", "Nötkött", "Kött", "Övrigt"];
+    const ordered = Array.from(groups.entries())
+      .sort((a, b) => {
+        const ia = order.indexOf(a[0]), ib = order.indexOf(b[0]);
+        return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
+      });
+
+    const itemHTML = (m) => {
       const chips = [];
-      const cat = categoryOf(m); if (cat) chips.push(chipHTML(cat.icon, cat.label, cat.cls));
       const st = starchOf(m); if (st) chips.push(chipHTML(st.icon, st.label, st.cls));
       const sp = soupOf(m); if (sp) chips.push(chipHTML(sp.icon, sp.label, sp.cls));
       if (m.components && m.components.theme) chips.push(chipHTML(null, m.components.theme, "badge-info"));
@@ -824,8 +845,20 @@
         (chips.length ? `<span class="pool-item-chips">${chips.join("")}</span>` : "") +
         waste +
         `</div>`;
+    };
+
+    const sections = ordered.map(([label, g]) => {
+      const items = g.meals.slice().sort((a, b) => a.name.localeCompare(b.name, "sv")).map(itemHTML).join("");
+      return `<div class="pool-group">` +
+        `<div class="pool-group-head"><span class="pool-group-title">${ICONS[g.icon] || ""}${esc(label)}</span>` +
+        `<span class="pool-group-count">${g.meals.length}</span></div>` +
+        `<div class="pool-group-grid">${items}</div></div>`;
     }).join("");
-    wrap.innerHTML = `<div class="pool-list"><div class="pool-list-head"><span class="pool-count">${app.pool.length} måltider</span></div>${items}</div>`;
+
+    wrap.innerHTML = `<div class="pool-list">` +
+      `<div class="pool-list-head"><span class="pool-count">${meals.length} måltider</span></div>` +
+      sections +
+      `</div>`;
   }
 
   function setupPoolOverview() {
