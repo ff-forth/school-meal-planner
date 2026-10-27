@@ -85,7 +85,7 @@
   function soupOf(meal) {
     const prep = (meal.components && meal.components.prep ? meal.components.prep : "").toLowerCase();
     const name = (meal.name ? meal.name : "").toLowerCase();
-    if (/soppa|soppas/.test(prep) || /\bsoppa\b/.test(name)) return { label: "Soppa", icon: "soup", cls: "badge-info" };
+    if (/soppa/.test(prep) || /soppa/.test(name)) return { label: "Soppa", icon: "soup", cls: "badge-info" };
     return null;
   }
 
