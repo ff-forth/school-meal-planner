@@ -111,10 +111,58 @@
     return wb;
   }
 
+  // Export the meal pool as an editable component sheet.
+  // The customer reviews/corrects the component breakdown (protein, carbs,
+  // vegs, sauce) and can add measured waste. "Svinn uppskattat" is the
+  // component-based estimate the app uses when no measured value exists.
+  function exportComponents(pool) {
+    const D2 = global.MealData;
+    const header = [
+      "Måltid", "Protein", "Kolhydrat", "Svinn (mätt)",
+      "Svinn uppskattat", "Grönäsar", "Sås", "Tillagning",
+    ];
+    const aoa = [header];
+    const sorted = (pool || []).slice().sort((a, b) => a.name.localeCompare(b.name, "sv"));
+    for (const m of sorted) {
+      const c = m.components || {};
+      aoa.push([
+        m.name,
+        c.protein || "",
+        c.starch || "",
+        m.wasteGPerEater != null ? m.wasteGPerEater : "",
+        m.wasteEstimate != null ? m.wasteEstimate : "",
+        D2.vegsOf(m) || "",
+        c.sauce || "",
+        c.prep || "",
+      ]);
+    }
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws["!cols"] = [
+      { wch: 46 }, { wch: 16 }, { wch: 14 }, { wch: 14 },
+      { wch: 18 }, { wch: 22 }, { wch: 14 }, { wch: 14 },
+    ];
+
+    const readme = [
+      ["Komponenter — redigerbar"],
+      [""],
+      ["Denna fil listar varje unika måltid med dess upplåtna komponenter."],
+      ["Kontrollera och rätta kolumnerna Protein / Kolhydrat / Grönäsar / Sås."],
+      ["Kolumnen 'Svinn (mätt)' kan fyllas i med svinn per ätande (g) om du har det."],
+      ["'Svinn uppskattat' är appens uppskattning baserad på komponenterna."],
+      [""],
+      ["Komponenterna styr både svinnuppskattningen och mönsterminingen i appen."],
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Komponenter");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(readme), "README");
+    return wb;
+  }
+
   global.XlsxIO = {
     readArrayBuffer,
     downloadWorkbook,
     exportPlan,
     templates,
+    exportComponents,
   };
 })(window);

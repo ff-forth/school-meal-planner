@@ -18,15 +18,16 @@
         <p class="matsedlar-subtitle" id="header-subtitle">8-veckors plan · kriterier + förslag från historik</p>
       </div>
       <div class="header-right">
-        <button id="btn-download-plan" class="btn btn-primary">⬇ Ladda ner plan (.xlsx)</button>
+        <button id="btn-back" class="btn btn-ghost hidden">← Ändra inställningar</button>
+        <button id="btn-download-plan" class="btn btn-primary hidden">⬇ Ladda ner plan (.xlsx)</button>
       </div>
     </div>
   </header>
 
   <main class="container">
-    <!-- LEFT: data + criteria + generate -->
-    <aside class="left-col">
-      <section class="report-panel">
+    <!-- PAGE 1: setup (steps 1-3) -->
+    <div id="page-setup" class="page">
+    <section class="report-panel">
         <h2 class="report-panel-title"><span class="num">1</span> Data</h2>
         <div class="panel-body">
           <div class="dropzone" id="drop-real">
@@ -42,6 +43,7 @@
           <div class="btn-row">
             <button id="btn-sample" class="btn btn-ghost">Ladda exempeldata</button>
             <button id="btn-templates" class="btn btn-ghost">⬇ Mallar (.xlsx)</button>
+            <button id="btn-components" class="btn btn-ghost" disabled>🧩 Komponenter (redigerbar)</button>
           </div>
           <div class="btn-row">
             <input type="file" id="file-skolmat" accept=".json,application/json" hidden />
@@ -107,10 +109,10 @@
           <p class="helper-text mt-2">Importera datan (eller ladda exemplet) och ställ in kriterierna, sedan genererar du planen. Planen börjar på valt datum och löper 8 veckor framåt.</p>
         </div>
       </section>
-    </aside>
+    </div>
 
-    <!-- RIGHT: status + plan -->
-    <div class="right-col">
+    <!-- PAGE 2: plan (status + step 4) -->
+    <div id="page-plan" class="page hidden">
       <section class="report-panel status-panel">
         <div class="badge-row" id="status-bar">
           <span class="helper-text">Fyll i datan och generera en plan för att se status här.</span>

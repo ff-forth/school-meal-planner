@@ -95,13 +95,15 @@
       }
     }
 
-    // Waste: lower is better (only when the meal has a waste figure).
-    if (criteria.preferLowWaste && meal.wasteGPerEater != null) {
+    // Waste: lower is better. Uses the measured value, or the component-based
+    // estimate as a fallback when no measured figure exists.
+    const wasteVal = meal.wasteGPerEater != null ? meal.wasteGPerEater : meal.wasteEstimate;
+    if (criteria.preferLowWaste && wasteVal != null) {
       // normalise: 0 at the fleet mean (~36), 1 at very low (~15)
-      const w = meal.wasteGPerEater;
+      const w = wasteVal;
       const wasteScore = Math.max(0, Math.min(1, (40 - w) / 25));
       score += wasteScore * W.waste;
-      if (w < 30) reasons.push(`low waste (${w} g/eater)`);
+      if (w < 30) reasons.push(`low waste (${w} g/eater${meal.wasteGPerEater == null ? " (uppskattat)" : ""})`);
     }
 
     // Required weekly tags: bonus if this week still needs the tag and meal has it

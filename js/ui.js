@@ -111,6 +111,7 @@
     }
     app.dayRecords = out.records;
     app.pool = D.buildMealPool(out.records);
+    applyEstimates();
     status.textContent = `✓ ${out.joined}/${out.total} dagar ihopslagna · ${app.pool.length} unika måltider · ` +
       `svinn ${out.stats.min}–${out.stats.max} g/ätande (medelvärde ${out.stats.mean})`;
     status.style.color = "var(--primary)";
@@ -140,6 +141,7 @@
   function loadSample() {
     app.dayRecords = D.loadSampleReal();
     app.pool = D.buildMealPool(app.dayRecords);
+    applyEstimates();
     const status = $("status-real");
     status.textContent = `✓ exempel: ${app.dayRecords.length} dagar · ${app.pool.length} unika måltider`;
     status.style.color = "var(--primary)";
@@ -163,6 +165,7 @@
       }
       app.dayRecords = out.records;
       app.pool = D.buildMealPool(out.records);
+      applyEstimates();
       const who = out.facilityName ? ` · ${out.facilityName}` : "";
       status.textContent = `✓ skolmat.info: ${out.records.length} dagar${who} · ${app.pool.length} unika måltider`;
       status.style.color = "var(--primary)";
@@ -186,10 +189,35 @@
     });
   }
 
+  // Attach component-based waste estimates to meals that lack a measured value.
+  function applyEstimates() {
+    if (!app.pool) return;
+    app.baseline = D.applyWasteEstimates(app.pool);
+  }
+
   function checkReady() {
     const ready = app.dayRecords && app.pool && app.pool.length;
     $("btn-generate").disabled = !ready;
+    const compBtn = $("btn-components");
+    if (compBtn) compBtn.disabled = !ready;
   }
+
+  // ---------- Page navigation (setup <-> plan) ----------
+  function showPlanPage() {
+    $("page-setup").classList.add("hidden");
+    $("page-plan").classList.remove("hidden");
+    $("btn-back").classList.remove("hidden");
+    $("btn-download-plan").classList.remove("hidden");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  function showSetupPage() {
+    $("page-plan").classList.add("hidden");
+    $("page-setup").classList.remove("hidden");
+    $("btn-back").classList.add("hidden");
+    $("btn-download-plan").classList.add("hidden");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  $("btn-back").addEventListener("click", showSetupPage);
 
   // ---------- Generate ----------
   $("btn-generate").addEventListener("click", () => {
@@ -203,6 +231,7 @@
     renderWeekTabs();
     renderPlan();
     renderStatus();
+    showPlanPage();
   });
 
   // ---------- Week strip ----------
@@ -279,7 +308,13 @@
         const cat = categoryOf(meal);
         const extra = [];
         if (meal.components.theme) extra.push(chipHTML(null, meal.components.theme, "badge-info"));
-        if (meal.wasteGPerEater != null) extra.push(`<span class="waste-chip ${meal.wasteGPerEater <= 30 ? "low" : meal.wasteGPerEater <= 55 ? "mid" : "high"}" title="Svinn per ätande">${meal.wasteGPerEater} g</span>`);
+        const wv = meal.wasteGPerEater != null ? meal.wasteGPerEater : meal.wasteEstimate;
+        if (wv != null) {
+          const est = meal.wasteGPerEater == null;
+          const cls = wv <= 30 ? "low" : wv <= 55 ? "mid" : "high";
+          const title = est ? "Uppskattat svinn per ätande (från komponenter)" : "Svinn per ätande";
+          extra.push(`<span class="waste-chip ${cls}${est ? " est" : ""}" title="${title}">${wv} g${est ? "*" : ""}</span>`);
+        }
         rows = rowFor(meal.name, cat, extra);
         if (meal.hasVeg && meal.vegName) {
           rows += rowFor(meal.vegName, { label: "Vegetariskt", icon: "leaf", cls: "badge-success" }, []);
@@ -320,7 +355,8 @@
       const row = document.createElement("div");
       const isCur = current && c.meal.id === current.id;
       row.className = "alt-row" + (isCur ? " current" : "");
-      const waste = c.meal.wasteGPerEater != null ? ` · ${c.meal.wasteGPerEater} g` : "";
+      const wv = c.meal.wasteGPerEater != null ? c.meal.wasteGPerEater : c.meal.wasteEstimate;
+      const waste = wv != null ? ` · ${wv} g${c.meal.wasteGPerEater == null ? "*" : ""}` : "";
       row.innerHTML =
         `<span class='name'>${c.meal.name}</span>` +
         `<span class='score'>${c.score.toFixed(2)}${waste}</span>`;
@@ -404,6 +440,13 @@
   // ---------- Download data templates ----------
   $("btn-templates").addEventListener("click", () => {
     IO.downloadWorkbook(IO.templates(), "skolmat-mallar.xlsx");
+  });
+
+  // ---------- Download editable component sheet ----------
+  $("btn-components").addEventListener("click", () => {
+    if (!app.pool) { alert("Importera data först."); return; }
+    applyEstimates();
+    IO.downloadWorkbook(IO.exportComponents(app.pool), "skolmat-komponenter.xlsx");
   });
 
   // ---------- Init ----------

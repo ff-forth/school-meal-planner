@@ -74,18 +74,18 @@ code { background: var(--bg-body); border: 1px solid var(--border-light); border
 .matsedlar-subtitle { margin: 0.15rem 0 0; font-size: 0.85rem; color: var(--text-muted); }
 .header-right { display: flex; align-items: center; gap: var(--space-1); }
 
-/* ---------- Layout ---------- */
+/* ---------- Layout (two pages: setup + plan) ---------- */
 .container {
   max-width: 1600px; margin: 0 auto;
   padding: var(--space-3);
-  display: grid; grid-template-columns: 340px 1fr; gap: var(--space-3);
+  display: grid; gap: var(--space-3);
   align-items: start;
 }
-.left-col { display: grid; gap: var(--space-3); position: sticky; top: 78px; }
-.right-col { display: grid; gap: var(--space-3); min-width: 0; }
-@media (max-width: 1080px) {
-  .container { grid-template-columns: 1fr; }
-  .left-col { position: static; }
+.page { display: grid; gap: var(--space-3); min-width: 0; }
+/* Setup page: the three step panels side by side on wide screens. */
+#page-setup { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); align-items: start; }
+@media (max-width: 720px) {
+  #page-setup { grid-template-columns: 1fr; }
 }
 
 /* ---------- Panels ---------- */
@@ -190,6 +190,8 @@ code { background: var(--bg-body); border: 1px solid var(--border-light); border
 .waste-chip.low  { background: var(--primary-subtle); color: var(--primary); }
 .waste-chip.mid  { background: #fef3c7; color: #92400e; }
 .waste-chip.high { background: var(--danger-bg); color: #991b1b; }
+/* estimated (component-based) value — dashed outline to signal it's not measured */
+.waste-chip.est { border: 1px dashed currentColor; }
 
 /* ---------- Plan panel ---------- */
 .plan-panel { padding: 0; }
