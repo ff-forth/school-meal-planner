@@ -18,6 +18,9 @@
     XLSX.writeFile(wb, filename);
   }
 
+  // Swedish day names so an exported plan re-imports cleanly (the UI is Swedish).
+  const DAY_SV = ["Måndag", "Tisdag", "Onsdag", "Torsdag", "Fredag"];
+
   // Export the finished 8-week plan.
   // plan: { [weekIdx]: { [dayIdx]: { date, meal } } } where meal is a Meal or null.
   function exportPlan(plan, criteria) {
@@ -29,7 +32,7 @@
         if (!day) continue;
         const meal = day.meal;
         aoa.push([
-          w + 1, D.DAYS[d], day.date || "",
+          w + 1, DAY_SV[d], day.date || "",
           meal ? meal.name : "",
           meal && meal.vegName ? meal.vegName : "",
           meal && meal.wasteGPerEater != null ? meal.wasteGPerEater : "",

@@ -243,6 +243,48 @@
     li.style.color = ok ? "var(--primary)" : "";
   }
 
+  // Rebuild an 8-week plan grid from a saved plan file's rows and show it.
+  // Meals are matched against the loaded pool by name (so waste/components
+  // carry over); unmatched names become minimal meals.
+  function loadPlanFromRows(rows, label) {
+    const status = $("status-real");
+    if (!rows.length) {
+      status.textContent = `Ingen plan hittades i ${label}.`;
+      status.style.color = "var(--danger)";
+      return;
+    }
+    const byName = new Map((app.pool || []).map((m) => [m.name, m]));
+    const plan = [];
+    let matched = 0;
+    for (const r of rows) {
+      const w = (r.week || 1) - 1;
+      if (w < 0 || w >= D.WEEKS) continue;
+      // Accept Swedish (app export) or English (D.DAYS) day names.
+      const d = DAY_SV.indexOf(r.weekday) >= 0 ? DAY_SV.indexOf(r.weekday) : D.DAYS.indexOf(r.weekday);
+      if (d < 0) continue;
+      if (!plan[w]) plan[w] = [];
+      const meal = byName.get(r.meal);
+      if (meal) matched++;
+      plan[w][d] = {
+        date: r.date || "",
+        meal: meal || { name: r.meal, vegName: r.veg || "", components: {}, wasteGPerEater: isFinite(r.waste) ? r.waste : null },
+      };
+    }
+    if (!plan.some((wk) => wk && wk.length)) {
+      status.textContent = `Ingen plan hittades i ${label}.`;
+      status.style.color = "var(--danger)";
+      return;
+    }
+    app.plan = plan;
+    app.state = { plan, pool: app.pool, uses: new Map(), lastUsed: new Map() };
+    app.viewWeek = "all";
+    renderWeekTabs();
+    renderPlan();
+    showPlanPage();
+    status.textContent = `✓ Plan laddad (${label}) · ${matched}/${rows.length} rätter matchade mot menyn.`;
+    status.style.color = "var(--primary)";
+  }
+
   async function handleRealFiles(files) {
     const status = $("status-real");
     const loader = RI.createLoader();
@@ -275,6 +317,11 @@
       const kind = RI.classify(f.name);
       try {
         const buf = await IO.readArrayBuffer(f);
+        if (kind === "plan") {
+          // A saved plan is loaded on its own (it isn't part of the menu data).
+          loadPlanFromRows(RI.readPlan(IO.readWorkbook(buf)), f.name);
+          continue;
+        }
         const res = RI.addFile(loader, f.name, buf);
         markFileStatus(kind, !res.error, res.error ? `${f.name} — ${res.error}` : `${f.name} (${res.count})`);
       } catch (err) {
@@ -383,6 +430,25 @@
       const f = input.files && input.files[0];
       if (f) handleSkolmatFile(f);
       input.value = "";
+    });
+  }
+
+  function setupPlanImport() {
+    const btn = $("btn-plan"), input = $("file-plan");
+    if (!btn || !input) return;
+    btn.addEventListener("click", () => input.click());
+    input.addEventListener("change", async () => {
+      const f = input.files && input.files[0];
+      input.value = "";
+      if (!f) return;
+      try {
+        const buf = await IO.readArrayBuffer(f);
+        loadPlanFromRows(RI.readPlan(IO.readWorkbook(buf)), f.name);
+      } catch (err) {
+        const status = $("status-real");
+        status.textContent = `Kunde inte läsa planen: ${err.message}`;
+        status.style.color = "var(--danger)";
+      }
     });
   }
 
@@ -870,6 +936,7 @@
   // ---------- Init ----------
   setupRealDropzone();
   setupSkolmatImport();
+  setupPlanImport();
   $("btn-sample").addEventListener("click", loadSample);
   // Prefer a school's waste: re-fill the pool and re-render if a plan exists.
   $("school-select").addEventListener("change", (e) => {

@@ -180,6 +180,13 @@ code { background: var(--bg-body); border: 1px solid var(--border-light); border
 
 .file-status { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.25rem; font-size: 0.76rem; color: var(--text-muted); }
 
+.input-section-title {
+  font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--text-muted); margin: 0.9rem 0 0.4rem; padding-bottom: 0.25rem;
+  border-bottom: 1px solid var(--border-light);
+}
+.input-section-title:first-child { margin-top: 0; }
+
 /* ---------- Badges / chips ---------- */
 .badge {
   display: inline-flex; align-items: center; gap: 0.3rem;

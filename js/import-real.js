@@ -94,6 +94,7 @@
     if (n.includes("svinn-report")) return "svinnreport";
     if (n.includes("svinn")) return "waste";
     if (n.includes("portion")) return "portions";
+    if (n.includes("skolmat-plan")) return "plan";
     if (n.includes("matsedel") || n.includes("inskrivna") || n.includes("skolmat")) return "menu";
     return null;
   }
@@ -208,6 +209,42 @@
       }
     }
     return byDate; // { eaters: {date: n}, waste: {date: kg} }
+  }
+
+  // ---- saved 8-week plan (…skolmat-plan-….xlsx, sheet "8-veckorsplan") ----
+  // Header: Vecka | Dag | Datum | Måltid | Vegetariskt | Svinn g/ätande.
+  // Returns the raw rows (week, weekday, date, meal, veg, waste) so the UI can
+  // rebuild the plan grid and match meals against the loaded pool.
+  function readPlan(wb) {
+    let rows = null;
+    for (const name of Object.keys(wb.Sheets)) {
+      const r = sheetRows(wb, name);
+      if (r && findHeaderRow(r, ["vecka", "dag", "datum", "maltid"])) { rows = r; break; }
+    }
+    if (!rows) return [];
+    const { row, header } = findHeaderRow(rows, ["vecka", "dag", "datum", "maltid"]);
+    const cWeek = colIndex(header, "vecka");
+    const cDay = colIndex(header, "dag");
+    const cDate = colIndex(header, "datum");
+    const cMeal = colIndex(header, "maltid");
+    const cVeg = colIndex(header, "vegetar");
+    const cWaste = colIndex(header, "svinn g/atande");
+    const out = [];
+    for (let i = row + 1; i < rows.length; i++) {
+      const r = rows[i];
+      if (!r) continue;
+      const meal = String(r[cMeal] == null ? "" : r[cMeal]).trim();
+      if (!meal) continue;
+      out.push({
+        week: parseInt(r[cWeek], 10),
+        weekday: String(r[cDay] == null ? "" : r[cDay]).trim(),
+        date: toISODate(r[cDate]),
+        meal,
+        veg: String(r[cVeg] == null ? "" : r[cVeg]).trim(),
+        waste: cWaste >= 0 ? parseFloat(r[cWaste]) : NaN,
+      });
+    }
+    return out;
   }
 
   // ---- per-school waste record (…rapport… "Hantera livs" export) ----
@@ -416,6 +453,7 @@
     readWaste,
     readPortions,
     readSvinnReport,
+    readPlan,
     readRapport,
     colIndexExact,
     join,

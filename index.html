@@ -30,10 +30,11 @@
     <section class="report-panel">
         <h2 class="report-panel-title"><span class="num">1</span> Data</h2>
         <div class="panel-body">
+          <h3 class="input-section-title">Historisk data</h3>
           <div class="dropzone" id="drop-real">
             <input type="file" id="file-real" accept=".xlsx,.xls,.json" multiple hidden />
             <p class="dropzone-title">Importera data (.xlsx / .json)</p>
-            <p class="dropzone-hint" id="status-real">Släpp meny (.xlsx eller skolmat-… .json), svinn &amp; portioner — eller klicka för att välja (flera filer samtidigt)</p>
+            <p class="dropzone-hint" id="status-real">Släpp meny (…Matsedel…) och svinn report (…svinn-report…) — eller klicka för att välja (flera filer samtidigt)</p>
           </div>
           <ul class="file-status" id="real-file-status">
             <li data-kind="menu">○ Meny (…Matsedel…)</li>
@@ -48,15 +49,22 @@
             <button id="btn-templates" class="btn btn-ghost">⬇ Mallar (.xlsx)</button>
             <button id="btn-components" class="btn btn-ghost" disabled>🧩 Komponenter (redigerbar)</button>
           </div>
+
+          <h3 class="input-section-title">Plandata</h3>
+          <div class="btn-row">
+            <input type="file" id="file-plan" accept=".xlsx,.xls" hidden />
+            <button id="btn-plan" class="btn btn-ghost">📂 Importera sparad plan (…skolmat-plan…)</button>
+          </div>
+          <p class="helper-text">
+            Ladda in en tidigare exporterad 8-veckorsplan för att fortsätta arbeta med den.
+            Rätterna matchas mot den laddade menyn så att svinn och komponenter följer med.
+          </p>
+
+          <h3 class="input-section-title">Skolmat (.json)</h3>
           <div class="btn-row">
             <input type="file" id="file-skolmat" accept=".json,application/json" hidden />
             <button id="btn-skolmat" class="btn btn-ghost">📥 Importera matsedel (JSON)</button>
           </div>
-          <p class="helper-text">
-            Importören känner igen varje fil efter namn: <b>menyn</b> ger vanliga + vegetariska
-            rätter per dag, <b>svinn</b> och <b>portioner</b> slås ihop per datum för att beräkna
-            svinn per ätande. Ladda ner mallarna om du vill bygga egna filer.
-          </p>
           <p class="helper-text">
             <b>skolmat.info:</b> ladda ner en <code>.json</code>-fil med rätter (via bokmärket i
             <code>tools/skolmat-bookmarklet.md</code>) och importera den här – den ger aktuella
