@@ -16,6 +16,7 @@
     state: null,      // {plan, pool, uses, lastUsed}
     eval: null,
     viewWeek: "all",  // "all" or a week index (0-based)
+    compRules: null,  // structured component-rule rows
   };
 
   const $ = (id) => document.getElementById(id);
@@ -66,6 +67,81 @@
   }
 
   // ---------- Criteria ----------
+  // ---------- Component rules (fixed structured rows) ----------
+  const COMP_RULE_DEFAULTS = [
+    { name: "Fläsk", kind: "max", count: 2, period: "week" },
+    { name: "Korv", kind: "max", count: 1, period: "14d" },
+    { name: "Ris", kind: "max", count: 1, period: "14d" },
+    { name: "Fisk", kind: "min", count: 1, period: "week" },
+    { name: "Kyckling", kind: "min", count: 1, period: "week" },
+  ];
+
+  function compRuleRowHTML(r) {
+    const esc = (s) => String(s || "").replace(/"/g, "&quot;");
+    return `<div class="comp-rule">` +
+      `<input type="text" class="inp comp-rule-name" value="${esc(r.name)}" placeholder="Komponent" />` +
+      `<select class="inp comp-rule-kind">` +
+        `<option value="max"${r.kind === "max" ? " selected" : ""}>max</option>` +
+        `<option value="min"${r.kind === "min" ? " selected" : ""}>minst</option>` +
+      `</select>` +
+      `<input type="number" class="inp comp-rule-count" min="1" step="1" value="${r.count || 1}" />` +
+      `<select class="inp comp-rule-period">` +
+        `<option value="week"${r.period === "week" ? " selected" : ""}>vecka</option>` +
+        `<option value="14d"${r.period === "14d" ? " selected" : ""}>14 dagar</option>` +
+      `</select>` +
+      `<button type="button" class="comp-rule-remove" title="Ta bort" aria-label="Ta bort">×</button>` +
+      `</div>`;
+  }
+
+  // Capture the current DOM rows back into app.compRules (preserves in-progress
+  // edits so a re-render doesn't wipe them).
+  function syncCompRulesFromDOM() {
+    const wrap = $("c-component-rules");
+    if (!wrap || !wrap.children.length) return;
+    app.compRules = Array.from(wrap.querySelectorAll(".comp-rule")).map((row) => ({
+      name: (row.querySelector(".comp-rule-name").value || "").trim(),
+      kind: row.querySelector(".comp-rule-kind").value,
+      count: parseInt(row.querySelector(".comp-rule-count").value, 10) || 1,
+      period: row.querySelector(".comp-rule-period").value,
+    }));
+  }
+
+  function renderComponentRules() {
+    const wrap = $("c-component-rules");
+    if (!wrap) return;
+    wrap.innerHTML = "";
+    for (const r of app.compRules) {
+      const div = document.createElement("div");
+      div.innerHTML = compRuleRowHTML(r);
+      wrap.appendChild(div.firstChild);
+    }
+    wrap.querySelectorAll(".comp-rule-remove").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const row = btn.closest(".comp-rule");
+        const idx = Array.from(wrap.children).indexOf(row);
+        syncCompRulesFromDOM(); // keep edits before rebuilding
+        app.compRules.splice(idx, 1);
+        renderComponentRules();
+      });
+    });
+  }
+
+  // Read the structured rows back into rule objects.
+  function readComponentRules() {
+    const wrap = $("c-component-rules");
+    if (!wrap) return [];
+    const rules = [];
+    for (const row of wrap.querySelectorAll(".comp-rule")) {
+      const name = (row.querySelector(".comp-rule-name").value || "").trim();
+      const kind = row.querySelector(".comp-rule-kind").value;
+      const count = parseInt(row.querySelector(".comp-rule-count").value, 10);
+      const period = row.querySelector(".comp-rule-period").value;
+      if (!name || !count) continue;
+      rules.push({ name, kind, count, period });
+    }
+    return rules;
+  }
+
   function readCriteria() {
     return P.parseCriteria({
       minGapWeeks: $("c-gap").value,
@@ -74,7 +150,7 @@
       maxAvgWaste: $("c-max-waste").value,
       excludedAllergens: $("c-allergens").value,
       required: $("c-required").value,
-      componentRules: $("c-components").value,
+      componentRules: readComponentRules(),
     });
   }
 
@@ -459,5 +535,12 @@
   setupRealDropzone();
   setupSkolmatImport();
   $("btn-sample").addEventListener("click", loadSample);
+  app.compRules = COMP_RULE_DEFAULTS.map((r) => ({ ...r }));
+  renderComponentRules();
+  $("btn-add-comp-rule").addEventListener("click", () => {
+    syncCompRulesFromDOM(); // keep edits before appending
+    app.compRules.push({ name: "", kind: "max", count: 1, period: "week" });
+    renderComponentRules();
+  });
   checkReady();
 })(window);

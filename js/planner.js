@@ -35,7 +35,9 @@
         .map((s) => s.trim().toLowerCase())
         .filter(Boolean),
       requiredTags: required,
-      componentRules: parseComponentRules(input.componentRules),
+      componentRules: Array.isArray(input.componentRules)
+        ? input.componentRules
+        : parseComponentRules(input.componentRules),
     };
   }
 
