@@ -51,6 +51,7 @@
     drumstick: '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.4 15.63a7.875 6 135 1 1 6.23-6.23 4.5 3.43 135 0 0-6.23 6.23"/><path d="m8.29 12.71-2.6 2.6a2.5 2.5 0 1 0-1.65 4.65A2.5 2.5 0 1 0 8.7 18.3l2.59-2.59"/></svg>',
     beef: '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c5 0 9 3 9 7s-4 7-9 7-9-3-9-7 4-7 9-7Z"/><path d="M9 10c1.2-1.2 3.4-1.2 4.6 0"/><path d="M9 14c1.2-1.2 3.4-1.2 4.6 0"/></svg>',
     pork: '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="9" width="20" height="6" rx="3"/><path d="M8 9v6"/><path d="M16 9v6"/></svg>',
+    korv: '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="8" rx="4"/><path d="M8 8v8"/><path d="M16 8v8"/></svg>',
     leaf: '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>',
     wheat: '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 22 16 8"/><path d="M3.47 12.53 5 11l1.5 1.5a1 1 0 0 1 0 1.4l-1.5 1.5a1 1 0 0 1-1.4 0L2.1 13.9a1 1 0 0 1 0-1.4Z"/><path d="M7.47 8.53 9 7l1.5 1.5a1 1 0 0 1 0 1.4L9 11.4a1 1 0 0 1-1.4 0L6.1 9.9a1 1 0 0 1 0-1.4Z"/><path d="M11.47 4.53 13 3l1.5 1.5a1 1 0 0 1 0 1.4L13 7.4a1 1 0 0 1-1.4 0L10.1 5.9a1 1 0 0 1 0-1.4Z"/><path d="m12.5 12.5 2.1 2.1a1 1 0 0 1 0 1.4l-2.1 2.1a1 1 0 0 1-1.4 0L9 16"/><path d="m14.5 6.5 2.1 2.1a1 1 0 0 1 0 1.4L14.5 12a1 1 0 0 1-1.4 0L11 9.9"/></svg>',
     soup: '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21a9 9 0 0 0 9-9H3a9 9 0 0 0 9 9Z"/><path d="M7 21h10"/><path d="M7 3v2"/><path d="M12 2v3"/><path d="M17 3v2"/></svg>',
@@ -60,8 +61,12 @@
     if (/fisk|lax|tunfisk|skaldjur|krabba/.test(p)) return { label: "Fisk", icon: "fish", cls: "badge-info" };
     if (/kyckling|fågel|pullad|gyros/.test(p)) return { label: "Kyckling", icon: "drumstick", cls: "badge-neutral" };
     if (/soja|vego|balj|kikarts|linse|falafel|ost/.test(p)) return { label: "Vegetariskt", icon: "leaf", cls: "badge-success" };
-    // pork (griskött) vs beef (nötkött) — these are distinct and must be shown separately
-    if (/flask|falukorv|korv|wienerkorv|blodpudding/.test(p)) return { label: "Fläsk", icon: "pork", cls: "badge-warning" };
+    // Sausages (korv/falukorv/wienerkorv) are their own category — they match
+    // the "Korv" component rule, not "Fläsk". Only true fläsk meat (flask*,
+    // blodpudding) is tagged Fläsk, so the badge tracks the actual pork in the
+    // dish name in both directions.
+    if (/korv/.test(p)) return { label: "Korv", icon: "korv", cls: "badge-warning" };
+    if (/flask|blodpudding/.test(p)) return { label: "Fläsk", icon: "pork", cls: "badge-warning" };
     if (/kott|farsbiff|kalops|biff/.test(p)) return { label: "Nötkött", icon: "beef", cls: "badge-neutral" };
     if (p) return { label: "Kött", icon: "beef", cls: "badge-neutral" };
     return null;
