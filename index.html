@@ -20,9 +20,7 @@
       <div class="header-right">
         <button id="btn-back" class="btn btn-ghost hidden">← Ändra inställningar</button>
         <input type="file" id="file-pool" accept=".xlsx,.xls" hidden />
-        <button id="btn-pool" class="btn btn-ghost hidden" title="Ladda poolen först (alla måltider + komponenter), sedan planen">📂 1. Ladda pool</button>
         <input type="file" id="file-plan" accept=".xlsx,.xls" hidden />
-        <button id="btn-plan" class="btn btn-ghost hidden" title="Ladda en sparad 8-veckorsplan (kräver att poolen är laddad)">📂 2. Ladda plan</button>
         <button id="btn-download-pool" class="btn btn-ghost hidden">⬇ Ladda ner pool (.xlsx)</button>
         <button id="btn-download-plan" class="btn btn-primary hidden">⬇ Ladda ner plan (.xlsx)</button>
       </div>
@@ -56,20 +54,15 @@
           <ol class="plan-steps">
             <li class="plan-step">
               <span class="plan-step-num">1</span>
-              <div class="plan-step-body">
-                <button id="btn-load-pool" class="btn btn-ghost plan-step-btn">📂 Ladda pool</button>
-                <p class="plan-step-hint">Alla måltider med svinn/ätande + komponenter.</p>
-              </div>
+              <button id="btn-load-pool" class="btn btn-ghost plan-step-btn">📂 Ladda pool</button>
+              <span class="plan-step-hint">Alla måltider med svinn/ätande + komponenter.</span>
             </li>
             <li class="plan-step">
               <span class="plan-step-num">2</span>
-              <div class="plan-step-body">
-                <button id="btn-load-plan" class="btn btn-ghost plan-step-btn">📂 Ladda plan</button>
-                <p class="plan-step-hint">Den 8-veckorsplanen. Rätterna matchas mot poolen efter namn – ladda poolen först så får de med komponenter och svinn.</p>
-              </div>
+              <button id="btn-load-plan" class="btn btn-ghost plan-step-btn">📂 Ladda plan</button>
+              <span class="plan-step-hint">Den 8-veckorsplanen. Rätterna matchas mot poolen efter namn – ladda poolen först så får de med komponenter och svinn.</span>
             </li>
           </ol>
-          <p class="helper-text plan-steps-note">Samma knappar finns i toppen och fungerar även på plansidan.</p>
 
           <h3 class="input-section-title">Skolmat (.json)</h3>
           <div class="btn-row">

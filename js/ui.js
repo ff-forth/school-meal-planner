@@ -590,16 +590,13 @@
     });
   }
 
-  // The pool/plan buttons appear in two places — the header (btn-pool/btn-plan)
-  // and the Plandata section (btn-load-pool/btn-load-plan). All of them drive the
-  // same hidden file inputs, so one change handler covers every button.
+  // The pool/plan load buttons live in the Plandata section (btn-load-pool /
+  // btn-load-plan) and drive the shared hidden file inputs.
   function setupPlanImport() {
     const input = $("file-plan");
     if (!input) return;
-    ["btn-plan", "btn-load-plan"].forEach((id) => {
-      const btn = $(id);
-      if (btn) btn.addEventListener("click", () => input.click());
-    });
+    const btn = $("btn-load-plan");
+    if (btn) btn.addEventListener("click", () => input.click());
     input.addEventListener("change", async () => {
       const f = input.files && input.files[0];
       input.value = "";
@@ -618,10 +615,8 @@
   function setupPoolImport() {
     const input = $("file-pool");
     if (!input) return;
-    ["btn-pool", "btn-load-pool"].forEach((id) => {
-      const btn = $(id);
-      if (btn) btn.addEventListener("click", () => input.click());
-    });
+    const btn = $("btn-load-pool");
+    if (btn) btn.addEventListener("click", () => input.click());
     input.addEventListener("change", async () => {
       const f = input.files && input.files[0];
       input.value = "";
@@ -678,10 +673,6 @@
     $("btn-download-plan").classList.remove("hidden");
     const poolBtn = $("btn-download-pool");
     if (poolBtn) poolBtn.classList.remove("hidden");
-    // Header load buttons are reachable from the plan view (load a pool/plan
-    // without going back to setup).
-    $("btn-pool").classList.remove("hidden");
-    $("btn-plan").classList.remove("hidden");
     renderPlan();
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -692,8 +683,6 @@
     $("btn-download-plan").classList.add("hidden");
     const poolBtn = $("btn-download-pool");
     if (poolBtn) poolBtn.classList.add("hidden");
-    $("btn-pool").classList.remove("hidden");
-    $("btn-plan").classList.remove("hidden");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
   $("btn-back").addEventListener("click", showSetupPage);
@@ -1380,9 +1369,6 @@
   setupSkolmatImport();
   setupPlanImport();
   setupPoolImport();
-  // Header load buttons are available from the start (setup and plan views).
-  $("btn-pool").classList.remove("hidden");
-  $("btn-plan").classList.remove("hidden");
   setupPoolOverview();
   // Prefer a school's waste: re-fill the pool and re-render if a plan exists.
   $("school-select").addEventListener("change", (e) => {

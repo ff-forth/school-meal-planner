@@ -35,7 +35,7 @@
   // Export the finished 8-week plan.
   // plan: { [weekIdx]: { [dayIdx]: { date, meal } } } where meal is a Meal or null.
   function exportPlan(plan, criteria) {
-    const header = ["Vecka", "Dag", "Datum", "Måltid", "Vegetariskt", "Svinn g/ätande"];
+    const header = ["Vecka", "Dag", "Datum", "Måltid", "Vegetariskt", "Svinn g/ätande (mätt/estimerat)"];
     const aoa = [header];
     for (let w = 0; w < D.WEEKS; w++) {
       for (let d = 0; d < D.DAYS.length; d++) {
