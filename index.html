@@ -43,10 +43,19 @@
             <button id="btn-sample" class="btn btn-ghost">Ladda exempeldata</button>
             <button id="btn-templates" class="btn btn-ghost">⬇ Mallar (.xlsx)</button>
           </div>
+          <div class="btn-row">
+            <input type="file" id="file-skolmat" accept=".json,application/json" hidden />
+            <button id="btn-skolmat" class="btn btn-ghost">📥 Importera matsedel (JSON)</button>
+          </div>
           <p class="helper-text">
             Importören känner igen varje fil efter namn: <b>menyn</b> ger vanliga + vegetariska
             rätter per dag, <b>svinn</b> och <b>portioner</b> slås ihop per datum för att beräkna
             svinn per ätande. Ladda ner mallarna om du vill bygga egna filer.
+          </p>
+          <p class="helper-text">
+            <b>skolmat.info:</b> ladda ner en <code>.json</code>-fil med rätter (via bokmärket i
+            <code>tools/skolmat-bookmarklet.md</code>) och importera den här – den ger aktuella
+            rätter + vegetariska alternativ per dag.
           </p>
         </div>
       </section>

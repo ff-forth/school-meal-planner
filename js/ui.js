@@ -150,6 +150,42 @@
     checkReady();
   }
 
+  // ---------- Import a skolmat.info JSON file ----------
+  async function handleSkolmatFile(file) {
+    const status = $("status-real");
+    try {
+      const text = await file.text();
+      const out = RI.parseSkolmatJSON(text);
+      if (!out.records.length) {
+        status.textContent = "⚠ " + (out.error || "Ingen matsedel hittades i filen.");
+        status.style.color = "var(--danger)";
+        return;
+      }
+      app.dayRecords = out.records;
+      app.pool = D.buildMealPool(out.records);
+      const who = out.facilityName ? ` · ${out.facilityName}` : "";
+      status.textContent = `✓ skolmat.info: ${out.records.length} dagar${who} · ${app.pool.length} unika måltider`;
+      status.style.color = "var(--primary)";
+      $("drop-real").classList.add("ok");
+      markFileStatus("menu", true, `skolmat.info (${out.records.length} dagar)`);
+      checkReady();
+    } catch (err) {
+      status.textContent = "⚠ Kunde inte läsa filen: " + err.message;
+      status.style.color = "var(--danger)";
+    }
+  }
+
+  function setupSkolmatImport() {
+    const btn = $("btn-skolmat"), input = $("file-skolmat");
+    if (!btn || !input) return;
+    btn.addEventListener("click", () => input.click());
+    input.addEventListener("change", () => {
+      const f = input.files && input.files[0];
+      if (f) handleSkolmatFile(f);
+      input.value = "";
+    });
+  }
+
   function checkReady() {
     const ready = app.dayRecords && app.pool && app.pool.length;
     $("btn-generate").disabled = !ready;
@@ -372,6 +408,7 @@
 
   // ---------- Init ----------
   setupRealDropzone();
+  setupSkolmatImport();
   $("btn-sample").addEventListener("click", loadSample);
   checkReady();
 })(window);

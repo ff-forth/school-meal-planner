@@ -199,6 +199,73 @@
     return XLSX.read(arrayBuffer, { type: "array", cellDates: true });
   }
 
+  // ---- skolmat.info JSON import ----
+  // Accepts either a single week object ({ok, facility, week:{year,weekNumber,days}})
+  // or an array of several week objects (as produced by the bookmarklet).
+  // Maps each open day's rows into day records; pickRows() decides which row is
+  // the regular dish and which (if any) is the vegetarian alternative.
+  const SKOLMAT_DAY_KEYS = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"];
+  // Positive keywords that mark a dish as vegetarian. We only flag a row as veg
+  // when there is explicit plant/veg evidence, so a meat dish is never wrongly
+  // put in the "Vegetariskt" slot. When neither row qualifies, vegName stays empty.
+  const VEG_KEYWORDS = ["balj", "falafel", "soja", "kikart", "vego", "veg", "groda",
+    "grodnings", "gronsak", "rotfrukt", "linser", "champignon", "svamp"];
+  function isVegDish(name) {
+    const n = norm(name);
+    return VEG_KEYWORDS.some((k) => n.includes(k));
+  }
+  // From a day's rows, pick the regular dish (first non-veg, else first) and the
+  // vegetarian alternative (first veg row, if different from the regular one).
+  function pickRows(rows) {
+    const veg = rows.find(isVegDish);
+    const name = rows.find((r) => !isVegDish(r)) || rows[0];
+    const vegName = veg && veg !== name ? veg : "";
+    return { name, vegName };
+  }
+  function mondayOfISO(y, w) {
+    const j = new Date(Date.UTC(y, 0, 4));
+    j.setUTCDate(j.getUTCDate() - ((j.getUTCDay() + 6) % 7));
+    const m = new Date(j);
+    m.setUTCDate(m.getUTCDate() + (w - 1) * 7);
+    const p = (n) => String(n).padStart(2, "0");
+    return `${m.getUTCFullYear()}-${p(m.getUTCMonth() + 1)}-${p(m.getUTCDate())}`;
+  }
+  function parseSkolmatJSON(text) {
+    let data;
+    try { data = JSON.parse(text); }
+    catch (err) { return { records: [], error: "Ogiltig JSON: " + err.message }; }
+    const weeks = Array.isArray(data) ? data : [data];
+    const records = [];
+    let facilityName = null;
+    for (const wk of weeks) {
+      if (!wk || !wk.week || !wk.week.days) continue;
+      if (wk.facility && wk.facility.name) facilityName = wk.facility.name;
+      const year = wk.week.year, weekNumber = wk.week.weekNumber;
+      if (!year || !weekNumber) continue;
+      const base = mondayOfISO(year, weekNumber);
+      for (let d = 0; d < SKOLMAT_DAY_KEYS.length; d++) {
+        const day = wk.week.days[SKOLMAT_DAY_KEYS[d]];
+        if (!day || !day.isOpen) continue;
+        const rows = (day.rows || []).map((r) => String(r && r.text ? r.text : "").trim()).filter(Boolean);
+        if (!rows.length) continue;
+        const dt = new Date(base);
+        dt.setUTCDate(dt.getUTCDate() + d);
+        const p = (n) => String(n).padStart(2, "0");
+        const date = `${dt.getUTCFullYear()}-${p(dt.getUTCMonth() + 1)}-${p(dt.getUTCDate())}`;
+        const picked = pickRows(rows);
+        records.push({
+          date,
+          weekday: SKOLMAT_DAY_KEYS[d],
+          name: picked.name,
+          vegName: picked.vegName,
+          wasteGPerEater: null,
+        });
+      }
+    }
+    if (!records.length) return { records: [], error: "Inga dagar hittades i filen." };
+    return { records, facilityName };
+  }
+
   // Accumulator for a set of uploaded files.
   function createLoader() {
     return { menuDays: [], wasteKg: {}, eaters: {}, stats: {} };
@@ -245,5 +312,9 @@
     createLoader,
     addFile,
     finish,
+    parseSkolmatJSON,
+    mondayOfISO,
+    isVegDish,
+    pickRows,
   };
 })(window);
