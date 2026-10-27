@@ -103,11 +103,12 @@ code { background: var(--bg-body); border: 1px solid var(--border-light); border
   display: flex; align-items: center; gap: 0.6rem;
   border-bottom: 1px solid var(--border-light);
 }
-.report-panel-title .num {
+.report-panel-title .num,
+.report-title .num {
   background: var(--primary-subtle); color: var(--primary);
   width: 1.75rem; height: 1.75rem; border-radius: 9999px;
   display: inline-flex; align-items: center; justify-content: center;
-  font-size: 0.85rem; font-weight: 800;
+  font-size: 0.85rem; font-weight: 800; flex: none;
 }
 .panel-body { padding: var(--space-3); display: grid; gap: var(--space-2); }
 
@@ -194,7 +195,7 @@ code { background: var(--bg-body); border: 1px solid var(--border-light); border
 .plan-panel { padding: 0; }
 .report-header { background: var(--bg-header); border-bottom: 1px solid var(--border-light); padding: var(--space-2) var(--space-3); }
 .report-header-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); flex-wrap: wrap; }
-.report-header .report-title { font-size: 1.1rem; }
+.report-header .report-title { font-size: 1.1rem; display: flex; align-items: center; gap: 0.6rem; }
 .plan-hint { margin: 0.4rem 0 0; font-size: 0.78rem; color: var(--text-muted); }
 .plan-body { padding: var(--space-2); }
 .plan-empty { text-align: center; color: var(--text-light); padding: 3.5rem 1rem; font-size: 0.9rem; }
