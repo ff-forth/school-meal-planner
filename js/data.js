@@ -59,6 +59,20 @@
       global.Decompose && global.Decompose.decomposeDish
         ? global.Decompose.decomposeDish(name)
         : { theme: null, protein: null, starch: null, sauce: null, prep: null, extras: [] };
+    // A record may carry explicit components (a pool file the user edited the
+    // component columns in). Those override the name-derived ones for the
+    // fields they specify, so the user's tag/component edits survive import.
+    if (raw.components) {
+      const c = raw.components;
+      if (c.protein != null) components.protein = c.protein;
+      if (c.starch != null) components.starch = c.starch;
+      if (c.sauce != null) components.sauce = c.sauce;
+      if (c.prep != null) components.prep = c.prep;
+      if (c.vegs) {
+        const parts = String(c.vegs).split(",").map((s) => s.trim()).filter(Boolean);
+        components.extras = Array.from(new Set([...(components.extras || []), ...parts]));
+      }
+    }
     return {
       id: slugify(name),
       name,

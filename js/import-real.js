@@ -265,6 +265,15 @@
     const cVeg = colIndex(header, "vegetar");
     const cMatt = colIndexExact(header, "svinn/atande (matt)");
     const cEst = colIndexExact(header, "svinn/atande (estimerat)");
+    // Component columns the user may have edited in the pool file. When present
+    // they override the components the app would otherwise re-derive from the
+    // dish name, so tag/component edits carry through on import.
+    const cProtein = colIndexExact(header, "protein");
+    const cStarch = colIndexExact(header, "kolhydrat");
+    const cVegs = colIndexExact(header, "gronasar");
+    const cSauce = colIndexExact(header, "sas");
+    const cPrep = colIndexExact(header, "tillagning");
+    const cell = (r, c) => (c >= 0 ? String(r[c] == null ? "" : r[c]).trim() : "");
     const out = [];
     for (let i = row + 1; i < rows.length; i++) {
       const r = rows[i];
@@ -274,11 +283,28 @@
       const m = cMatt >= 0 ? parseFloat(r[cMatt]) : NaN;
       const est = cEst >= 0 ? parseFloat(r[cEst]) : NaN;
       const waste = isFinite(m) ? m : (isFinite(est) ? est : null);
-      out.push({
+      const protein = cell(r, cProtein);
+      const starch = cell(r, cStarch);
+      const vegs = cell(r, cVegs);
+      const sauce = cell(r, cSauce);
+      const prep = cell(r, cPrep);
+      const rec = {
         name: meal,
         vegName: cVeg >= 0 ? String(r[cVeg] == null ? "" : r[cVeg]).trim() : "",
         wasteGPerEater: waste,
-      });
+      };
+      // Only attach explicit components when the row actually has them, so a
+      // pool file without the columns still falls back to name-derived ones.
+      if (protein || starch || vegs || sauce || prep) {
+        rec.components = {
+          protein: protein || null,
+          starch: starch || null,
+          sauce: sauce || null,
+          prep: prep || null,
+          vegs: vegs || null,
+        };
+      }
+      out.push(rec);
     }
     return out;
   }
