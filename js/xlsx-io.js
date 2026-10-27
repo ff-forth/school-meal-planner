@@ -1,0 +1,120 @@
+/* xlsx-io.js — SheetJS helpers: read uploaded files to ArrayBuffer, and
+   export the finished 8-week plan. Real-file parsing lives in import-real.js. */
+(function (global) {
+  "use strict";
+  const D = global.MealData;
+
+  // Read an .xlsx File -> ArrayBuffer (for RealImport.addFile).
+  function readArrayBuffer(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target.result);
+      reader.onerror = reject;
+      reader.readAsArrayBuffer(file);
+    });
+  }
+
+  function downloadWorkbook(wb, filename) {
+    XLSX.writeFile(wb, filename);
+  }
+
+  // Export the finished 8-week plan.
+  // plan: { [weekIdx]: { [dayIdx]: { date, meal } } } where meal is a Meal or null.
+  function exportPlan(plan, criteria) {
+    const header = ["Vecka", "Dag", "Datum", "Måltid", "Vegetariskt", "Svinn g/ätande"];
+    const aoa = [header];
+    for (let w = 0; w < D.WEEKS; w++) {
+      for (let d = 0; d < D.DAYS.length; d++) {
+        const day = plan[w] && plan[w][d];
+        if (!day) continue;
+        const meal = day.meal;
+        aoa.push([
+          w + 1, D.DAYS[d], day.date || "",
+          meal ? meal.name : "",
+          meal && meal.vegName ? meal.vegName : "",
+          meal && meal.wasteGPerEater != null ? meal.wasteGPerEater : "",
+        ]);
+      }
+    }
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws["!cols"] = [{ wch: 6 }, { wch: 12 }, { wch: 12 }, { wch: 44 }, { wch: 44 }, { wch: 14 }];
+
+    // Summary sheet
+    const sumAoa = [
+      ["Kriterier", "Värde"],
+      ["Min. veckor innan upprepning", criteria.minGapWeeks],
+      ["Max. gånger per rätt (8 v)", criteria.maxUses],
+      ["Föredra lågt svinn", criteria.preferLowWaste ? "ja" : "nej"],
+      ["Max. genomsnittligt svinn (g/ätande)", criteria.maxAvgWaste || "(ingen)"],
+      ["Uteslutna allergener", criteria.excludedAllergens.join(", ") || "(inga)"],
+      ["Önskade teman", criteria.requiredTags.map((r) => `${r.tag}:${r.min}/v`).join(", ") || "(inga)"],
+    ];
+    const ws2 = XLSX.utils.aoa_to_sheet(sumAoa);
+    ws2["!cols"] = [{ wch: 34 }, { wch: 34 }];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "8-veckorsplan");
+    XLSX.utils.book_append_sheet(wb, ws2, "Sammanfattning");
+    return wb;
+  }
+
+  // Downloadable templates so the client can build their own data files.
+  // Each sheet's header must match what the importer looks for.
+  function templates() {
+    const wb = XLSX.utils.book_new();
+
+    // Menu — importer needs a header row containing "datum" + "veckodag",
+    // plus columns "alternativ 1" and "vegetar".
+    const menu = [
+      ["Datum", "Veckodag", "Alternativ 1", "Alternativ - Vegetariskt"],
+      ["2026-09-14", "Måndag", "Köttbullar med kokt potatis och lingon", "Baljfärsruta med kokt potatis och lingon"],
+      ["2026-09-15", "Tisdag", "Stekt fisk med kokt potatis och dillsås", "Vegetarisk schnitzel med kokt potatis och dillsås"],
+    ];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(menu), "Matsedel");
+
+    // Waste — importer sums "vikt" per "datum" (any sheet with those headers).
+    const waste = [
+      ["Kund", "Svinntyp", "Datum", "Servering", "Komponent", "Vikt"],
+      ["Skola", "Matsvinn", "2026-09-14", "Lunch", "Måltid", 12.5],
+      ["Skola", "Matsvinn", "2026-09-15", "Lunch", "Måltid", 9.8],
+    ];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(waste), "Svinn");
+
+    // Portions — importer sums "antal ätande" (or "mängd") per "datum".
+    const portions = [
+      ["Leverantör", "Datum", "Servering", "Antal ätande"],
+      ["Mataktör", "2026-09-14", "Lunch", 320],
+      ["Mataktör", "2026-09-15", "Lunch", 305],
+    ];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(portions), "Portioner");
+
+    // README with the expected columns.
+    const readme = [
+      ["Skolmat Planner — datamallar"],
+      [""],
+      ["MENY (filnamn ska innehålla 'Matsedel' eller 'Inskrivna')"],
+      ["  Kolumner: Datum (ÅÅÅÅ-MM-DD) | Veckodag | Alternativ 1 (vanlig rätt) | Alternativ - Vegetariskt"],
+      ["  En rad per serveringsdag. Datum används för att slå ihop med svinn & portioner."],
+      [""],
+      ["SVINN (filnamn ska innehålla 'Svinn')"],
+      ["  Kolumner: ... | Datum | ... | Vikt (kg)"],
+      ["  Importören summerar Vikt per Datum över alla blad."],
+      [""],
+      ["PORTIONER (filnamn ska innehålla 'Portioner')"],
+      ["  Kolumner: ... | Datum | ... | Antal ätande (eller 'Mängd')"],
+      ["  Importören summerar antalet ätande per Datum över alla blad."],
+      [""],
+      ["Svinn per ätande = totalt svinn (kg) / antal ätande × 1000 (g)."],
+    ];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(readme), "README");
+
+    return wb;
+  }
+
+  global.XlsxIO = {
+    readArrayBuffer,
+    downloadWorkbook,
+    exportPlan,
+    templates,
+  };
+})(window);

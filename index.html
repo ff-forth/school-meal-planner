@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Skolmat Planner — 8 veckor</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="header">
+    <div class="header-inner">
+      <div class="matsedlar-header-copy">
+        <div class="matsedlar-title-line">
+          <span class="logo">🍽️</span>
+          <h1 class="report-title">Skolmat Planner</h1>
+        </div>
+        <p class="matsedlar-subtitle" id="header-subtitle">8-veckors plan · kriterier + förslag från historik</p>
+      </div>
+      <div class="header-right">
+        <button id="btn-download-plan" class="btn btn-primary">⬇ Ladda ner plan (.xlsx)</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- LEFT: data + criteria + generate -->
+    <aside class="left-col">
+      <section class="report-panel">
+        <h2 class="report-panel-title"><span class="num">1</span> Data</h2>
+        <div class="panel-body">
+          <div class="dropzone" id="drop-real">
+            <input type="file" id="file-real" accept=".xlsx,.xls" multiple hidden />
+            <p class="dropzone-title">Importera data (.xlsx)</p>
+            <p class="dropzone-hint" id="status-real">Släpp filerna för meny, svinn &amp; portioner — eller klicka för att välja (alla tre samtidigt)</p>
+          </div>
+          <ul class="file-status" id="real-file-status">
+            <li data-kind="menu">○ Meny (…Matsedel…)</li>
+            <li data-kind="waste">○ Svinn (…Svinn…)</li>
+            <li data-kind="portions">○ Portioner (…Portioner…)</li>
+          </ul>
+          <div class="btn-row">
+            <button id="btn-sample" class="btn btn-ghost">Ladda exempeldata</button>
+            <button id="btn-templates" class="btn btn-ghost">⬇ Mallar (.xlsx)</button>
+          </div>
+          <p class="helper-text">
+            Importören känner igen varje fil efter namn: <b>menyn</b> ger vanliga + vegetariska
+            rätter per dag, <b>svinn</b> och <b>portioner</b> slås ihop per datum för att beräkna
+            svinn per ätande. Ladda ner mallarna om du vill bygga egna filer.
+          </p>
+        </div>
+      </section>
+
+      <section class="report-panel">
+        <h2 class="report-panel-title"><span class="num">2</span> Kriterier</h2>
+        <div class="panel-body">
+          <div class="field-grid">
+            <div class="field">
+              <label class="lbl" for="c-gap">Min. veckor innan rätt upprepas</label>
+              <input type="number" id="c-gap" step="1" value="2" class="inp" />
+            </div>
+            <div class="field">
+              <label class="lbl" for="c-maxuse">Max. gånger en rätt på 8 v</label>
+              <input type="number" id="c-maxuse" step="1" value="4" class="inp" />
+            </div>
+          </div>
+          <label class="check-row">
+            <input type="checkbox" id="c-prefer-waste" checked />
+            <span>Föredra lågt matsvinn</span>
+          </label>
+          <div class="field">
+            <label class="lbl" for="c-max-waste">Max. genomsnittligt svinn (g / ätande / dag)</label>
+            <input type="number" id="c-max-waste" step="1" value="40" class="inp" />
+          </div>
+          <div class="field">
+            <label class="lbl" for="c-allergens">Uteslutna allergener (komma-separerat)</label>
+            <input type="text" id="c-allergens" value="" class="inp" placeholder="fisk, skalbagge, gluten, mjölk" />
+          </div>
+          <div class="field">
+            <label class="lbl" for="c-required">Önskade teman (format: tema:min/vecka)</label>
+            <input type="text" id="c-required" value="" class="inp" placeholder="marocko:1, kina:1" />
+          </div>
+          <p class="helper-text">
+            Allergener känns igen från rätten (fisk, skalbagge, gluten, mjölk). Önskade teman använder
+            rättens <code>theme</code>, t.ex. <code>marocko:1</code> = minst en <code>marocko</code>-rätt per vecka.
+          </p>
+        </div>
+      </section>
+
+      <section class="report-panel">
+        <h2 class="report-panel-title"><span class="num">3</span> Generera</h2>
+        <div class="panel-body">
+          <div class="field">
+            <label class="lbl" for="c-start">Startdatum (måndag)</label>
+            <input type="date" id="c-start" class="inp" value="2026-09-14" />
+          </div>
+          <button id="btn-generate" class="btn btn-primary w-full" disabled>✨ Fyll i 8-veckorsplan</button>
+          <p class="helper-text mt-2">Importera datan (eller ladda exemplet) och ställ in kriterierna, sedan genererar du planen. Planen börjar på valt datum och löper 8 veckor framåt.</p>
+        </div>
+      </section>
+    </aside>
+
+    <!-- RIGHT: status + plan -->
+    <div class="right-col">
+      <section class="report-panel status-panel">
+        <div class="badge-row" id="status-bar">
+          <span class="helper-text">Fyll i datan och generera en plan för att se status här.</span>
+        </div>
+      </section>
+
+      <section class="report-panel plan-panel">
+        <div class="report-header">
+          <div class="report-header-row">
+            <h2 class="report-title">4 · 8-veckorsplan</h2>
+            <div class="menu-week-strip" id="week-tabs"></div>
+          </div>
+          <p class="plan-hint">Alla veckor visas som dagkort. Klicka på en veckoflik för att zooma in, eller klicka på en dag för att se rankade alternativ &amp; byta.</p>
+        </div>
+        <div class="plan-body">
+          <div id="grid-empty" class="plan-empty">
+            8-veckorsplanen visas här efter att du genererat en plan.
+          </div>
+          <div id="week-cards" class="plan-cards hidden"></div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Day alternatives popover -->
+  <div id="popover" class="popover hidden">
+    <div class="popover-head">
+      <span id="popover-title" class="popover-title"></span>
+      <button id="popover-close" class="popover-close" aria-label="Stäng">×</button>
+    </div>
+    <div id="popover-list" class="popover-list"></div>
+  </div>
+
+  <script src="js/decompose.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/sample-real.js"></script>
+  <script src="js/import-real.js"></script>
+  <script src="js/xlsx-io.js"></script>
+  <script src="js/mining.js"></script>
+  <script src="js/planner.js"></script>
+  <script src="js/ui.js"></script>
+</body>
+</html>

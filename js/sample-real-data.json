@@ -1,0 +1,352 @@
+[
+ {
+  "date": "2024-03-01",
+  "weekday": "Friday",
+  "name": "Köttbullar med kokt potatis och brunsås samt lingonsylt",
+  "vegName": "Baljfärsruta med gräddsås, kokt potatis och lingon",
+  "wasteGPerEater": 38.1
+ },
+ {
+  "date": "2024-03-06",
+  "weekday": "Wednesday",
+  "name": "USA: BBQ-glacerad fläskkarré med rostad potatis med BBQ-sås",
+  "vegName": "USA: Pulled vego med BBQ-sås och rostad potatis, BBQ-sås",
+  "wasteGPerEater": 38.5
+ },
+ {
+  "date": "2024-03-11",
+  "weekday": "Monday",
+  "name": "Isterband/Frukostkorv med dillstuvade potatis och rödbetor",
+  "vegName": "Vegetarisk korv med solskensmos",
+  "wasteGPerEater": 48.9
+ },
+ {
+  "date": "2024-03-14",
+  "weekday": "Thursday",
+  "name": "Kött och grönsakssopa med bröd och pålägg",
+  "vegName": "Broccolisoppa med bröd och pålägg",
+  "wasteGPerEater": 43.6
+ },
+ {
+  "date": "2024-03-19",
+  "weekday": "Tuesday",
+  "name": "Korv Stroganoff med kokt ris",
+  "vegName": "Vegetatisk korv Stroganoff med kokt ris",
+  "wasteGPerEater": 37.6
+ },
+ {
+  "date": "2024-03-22",
+  "weekday": "Friday",
+  "name": "Kalops på fläskkött med kokt potatis och rödbetor",
+  "vegName": "Kalops på vegobitar med kokt potatis och rödbetor",
+  "wasteGPerEater": 56.8
+ },
+ {
+  "date": "2024-03-27",
+  "weekday": "Wednesday",
+  "name": "Stekt fisk med kokt potatis och stuvad spenat/kall sås",
+  "vegName": "Vegetarisk schnitzel med kokt potatis och spenat",
+  "wasteGPerEater": 41.2
+ },
+ {
+  "date": "2024-04-09",
+  "weekday": "Tuesday",
+  "name": "Fiskgratäng med dillsås samt kokt potatis",
+  "vegName": "Nudelwok med grönsaker",
+  "wasteGPerEater": 43.1
+ },
+ {
+  "date": "2024-04-12",
+  "weekday": "Friday",
+  "name": "Mild indisk tomatkyckling med kokt ris",
+  "vegName": "Indinsk grönsaksgryta med kokt ris",
+  "wasteGPerEater": 46.2
+ },
+ {
+  "date": "2024-04-17",
+  "weekday": "Wednesday",
+  "name": "Kycklinggryta med kokt ris",
+  "vegName": "Grönsaksgryta med kokt ris",
+  "wasteGPerEater": 41.7
+ },
+ {
+  "date": "2024-04-29",
+  "weekday": "Monday",
+  "name": "Sprödbakad fisk med remoladsås och kokt potatis",
+  "vegName": "Vegetarisk biff med remoladsås och kokt potatis",
+  "wasteGPerEater": 35.7
+ },
+ {
+  "date": "2024-05-03",
+  "weekday": "Friday",
+  "name": "Hamburgare med tillbehör, klyftpotatis",
+  "vegName": "Grönsaksburgare med tillbehör, klyftpotatis",
+  "wasteGPerEater": 33.6
+ },
+ {
+  "date": "2024-05-08",
+  "weekday": "Wednesday",
+  "name": "Kålpudding med gräddsås, kokt potatis och lingonsylt",
+  "vegName": "Vegetarisk kålpudding med gräddsås, kokt potatis och lingonsylt",
+  "wasteGPerEater": 32.2
+ },
+ {
+  "date": "2024-05-15",
+  "weekday": "Wednesday",
+  "name": "Potatisgratäng med rökt kyckling",
+  "vegName": "Potatisgratäng med sojastrimlor",
+  "wasteGPerEater": 34.6
+ },
+ {
+  "date": "2024-05-20",
+  "weekday": "Monday",
+  "name": "\"Korvkiosk\" (Varmkorv, mos, bröd och tillbehör)",
+  "vegName": "\"Korvkiosk\" (korv, mos, bröd och tillbehör)",
+  "wasteGPerEater": 31.9
+ },
+ {
+  "date": "2024-05-23",
+  "weekday": "Thursday",
+  "name": "Pastasallad med skinka och Rhode Islandsås",
+  "vegName": "Pasta med ost och broccolisås",
+  "wasteGPerEater": 39.1
+ },
+ {
+  "date": "2024-05-28",
+  "weekday": "Tuesday",
+  "name": "Fish and chips med ärtor och tartarsås",
+  "vegName": "Vegetarisk schnitzel, rostad potatis med ärtor och tartarsås",
+  "wasteGPerEater": 39.1
+ },
+ {
+  "date": "2024-05-31",
+  "weekday": "Friday",
+  "name": "Köttbullar med italiensk tomatsås och pasta",
+  "vegName": "Morotsbollar med italiensk tomatsås och pasta",
+  "wasteGPerEater": 52.0
+ },
+ {
+  "date": "2024-06-05",
+  "weekday": "Wednesday",
+  "name": "Kycklingfärsbiffar med mangorajasås och klyftpotatis",
+  "vegName": "Ärtfärsbiff med mangorajasås och klyftpotatis",
+  "wasteGPerEater": 36.6
+ },
+ {
+  "date": "2024-08-19",
+  "weekday": "Monday",
+  "name": "Korv Stroganoff med kokt ris",
+  "vegName": "Vegetarisk korv Stroganoff med kokt ris",
+  "wasteGPerEater": 40.3
+ },
+ {
+  "date": "2024-08-22",
+  "weekday": "Thursday",
+  "name": "Potatis och purjolökssoppa med baconströssel samt bröd och pålägg",
+  "vegName": "Grönsakssoppa med bröd och pålägg",
+  "wasteGPerEater": 32.6
+ },
+ {
+  "date": "2024-08-27",
+  "weekday": "Tuesday",
+  "name": "Krämig fiskgryta  med kokt potatis och aioli",
+  "vegName": "Potatisbullar med lingonsylt",
+  "wasteGPerEater": 38.9
+ },
+ {
+  "date": "2024-08-30",
+  "weekday": "Friday",
+  "name": "Teriyakikyckling med grönsaker och nudlar",
+  "vegName": "Vegetarisk teriyaki med grönsaker och nudlar",
+  "wasteGPerEater": 43.6
+ },
+ {
+  "date": "2024-09-04",
+  "weekday": "Wednesday",
+  "name": "Wienerkorv med potatismos, grillgurka, senap och ketchup",
+  "vegName": "Vegetarisk korv med potatismos, senap och ketchup",
+  "wasteGPerEater": 32.7
+ },
+ {
+  "date": "2024-09-09",
+  "weekday": "Monday",
+  "name": "Korvwok med pasta",
+  "vegName": "Grönsakswok med pasta och keso",
+  "wasteGPerEater": 41.2
+ },
+ {
+  "date": "2024-09-12",
+  "weekday": "Thursday",
+  "name": "Köttfärssoppa med potatis och bönor med bröd och pålägg",
+  "vegName": "Blomkålsoppa med bröd och pålägg",
+  "wasteGPerEater": 35.4
+ },
+ {
+  "date": "2024-09-17",
+  "weekday": "Tuesday",
+  "name": "Pasta med ost -och skinksås",
+  "vegName": "Pasta med ost och broccolisås",
+  "wasteGPerEater": 35.3
+ },
+ {
+  "date": "2024-09-20",
+  "weekday": "Friday",
+  "name": "Tacos med tortillabröd och klassiska tillbehör",
+  "vegName": "Vegetarisk tacos med tortillabröd klassiska tillbehör",
+  "wasteGPerEater": 33.5
+ },
+ {
+  "date": "2024-09-25",
+  "weekday": "Wednesday",
+  "name": "Kycklinggryta med röd curry, grönsaker och kokt ris",
+  "vegName": "Röd currygryta med grönsaker och kokt ris",
+  "wasteGPerEater": 38.0
+ },
+ {
+  "date": "2024-10-07",
+  "weekday": "Monday",
+  "name": "Isterband/Frukostkorv med dillstuvade potatis och inlagda rödbetor",
+  "vegName": "Vegetarisk korv med dillstuvad potatis och inlagda rödbetor",
+  "wasteGPerEater": 38.8
+ },
+ {
+  "date": "2024-10-10",
+  "weekday": "Thursday",
+  "name": "Kött och grönsakssopa med bröd och pålägg",
+  "vegName": "Broccolisoppa med bröd och pålägg",
+  "wasteGPerEater": 37.4
+ },
+ {
+  "date": "2024-10-15",
+  "weekday": "Tuesday",
+  "name": "Fiskburgare med bröd, dillmajonäs och potatismos",
+  "vegName": "Falafelburgare med bröd och potatismos",
+  "wasteGPerEater": 33.7
+ },
+ {
+  "date": "2024-10-18",
+  "weekday": "Friday",
+  "name": "Stekt kycklinglårfilé med rostad potatis och rotfrukter, bearnaisesås",
+  "vegName": "Broccolibiffar med rostad potatis och kall bearnaisesås",
+  "wasteGPerEater": 38.0
+ },
+ {
+  "date": "2024-11-06",
+  "weekday": "Wednesday",
+  "name": "Viltkryddad köttfärsruta med svampsås och kokt potatis samt lingonsylt",
+  "vegName": "Baljfärsruta med svampsås och kokt potatis samt lingonsylt",
+  "wasteGPerEater": 35.4
+ },
+ {
+  "date": "2024-11-11",
+  "weekday": "Monday",
+  "name": "Köttbullar med stuvade makaroner och ketchup",
+  "vegName": "Morrotsbollar med stuvade makaroner och ketchup",
+  "wasteGPerEater": 28.2
+ },
+ {
+  "date": "2024-11-14",
+  "weekday": "Thursday",
+  "name": "Köttfärssoppa med rotfrukter samt bröd och pålägg",
+  "vegName": "Vegetarisk färssoppa samt bröd och pålägg",
+  "wasteGPerEater": 36.9
+ },
+ {
+  "date": "2024-11-19",
+  "weekday": "Tuesday",
+  "name": "Gratinerad Mac and chesse med bacon",
+  "vegName": "Gratinerad mac and chesse",
+  "wasteGPerEater": 34.0
+ },
+ {
+  "date": "2024-11-22",
+  "weekday": "Friday",
+  "name": "Kycklingfajitas med klyftpotatis och vitlökssås",
+  "vegName": "Fajitaskryddade vegobitar med klyftpotatis och vitlökssås",
+  "wasteGPerEater": 39.6
+ },
+ {
+  "date": "2024-11-27",
+  "weekday": "Wednesday",
+  "name": "Fläskköttsgryta med rotfrukter och kokt potatis",
+  "vegName": "Rotfruktsgryta med kokt potatis",
+  "wasteGPerEater": 35.2
+ },
+ {
+  "date": "2024-12-02",
+  "weekday": "Monday",
+  "name": "Ugnsgratinerad falukorv med potatismos samt grillguka, senap och ketchup",
+  "vegName": "Ugnsgratinerad vegetarisk korv med potatismos, senap och ketchup",
+  "wasteGPerEater": 39.8
+ },
+ {
+  "date": "2024-12-05",
+  "weekday": "Thursday",
+  "name": "Potatis och purjolökssoppa med baconströssel samt bröd och pålägg",
+  "vegName": "Svampsoppa med bröd och pålägg",
+  "wasteGPerEater": 37.1
+ },
+ {
+  "date": "2024-12-10",
+  "weekday": "Tuesday",
+  "name": "Stekt kyckling med potatisgratäng och skysås",
+  "vegName": "Vegetarisk schnitzel med potatisgratäng och skysås",
+  "wasteGPerEater": 33.3
+ },
+ {
+  "date": "2024-12-13",
+  "weekday": "Friday",
+  "name": "Lasagne med ketchup",
+  "vegName": "Vegetarisk lasagne med ketchup",
+  "wasteGPerEater": 32.7
+ },
+ {
+  "date": "2024-12-18",
+  "weekday": "Wednesday",
+  "name": "Julmustglaserad fläskkarre med kokt potatis, rödkål och gräddsås",
+  "vegName": "Grönsaksbiffar med kokt potatis, rödkål och gräddsås",
+  "wasteGPerEater": 37.6
+ },
+ {
+  "date": "2025-01-09",
+  "weekday": "Thursday",
+  "name": "Pasta med krämig kycklingcarbonara",
+  "vegName": "Pasta med krämig broccolisås",
+  "wasteGPerEater": 33.6
+ },
+ {
+  "date": "2025-01-14",
+  "weekday": "Tuesday",
+  "name": "Kycklingwok med ris och srirachamajonäs",
+  "vegName": "Grönsakswok med ris och srirachamajonäs",
+  "wasteGPerEater": 35.9
+ },
+ {
+  "date": "2025-01-17",
+  "weekday": "Friday",
+  "name": "Helstekt fläskkarré med svampsås och kokt potatis",
+  "vegName": "Kidneybönsbiffar med svampsås och kokt potatis",
+  "wasteGPerEater": 40.6
+ },
+ {
+  "date": "2025-01-22",
+  "weekday": "Wednesday",
+  "name": "Potatis och purjolökssoppa med stekta bacontärningar serveras med bröd och pålägg",
+  "vegName": "Champinjonsoppa med bröd och pålägg",
+  "wasteGPerEater": 29.0
+ },
+ {
+  "date": "2025-01-27",
+  "weekday": "Monday",
+  "name": "Kycklinggryta med grönsaker, gul curry och kokt ris",
+  "vegName": "Grönsaksgryta med gul curry och kokt ris",
+  "wasteGPerEater": 38.6
+ },
+ {
+  "date": "2025-01-30",
+  "weekday": "Thursday",
+  "name": "Stekt falukorv med stuvade makaroner och ketchup",
+  "vegName": "Stekt vegetarisk korv med stuvade makaroner och ketchup",
+  "wasteGPerEater": 33.9
+ }
+]
