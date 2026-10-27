@@ -282,7 +282,11 @@
       if (!meal) continue;
       const m = cMatt >= 0 ? parseFloat(r[cMatt]) : NaN;
       const est = cEst >= 0 ? parseFloat(r[cEst]) : NaN;
-      const waste = isFinite(m) ? m : (isFinite(est) ? est : null);
+      // Only the measured column counts as measured waste. A value in the
+      // "estimerat" column is the app's own component-based estimate — carrying
+      // it into wasteGPerEater would wrongly mark it as measured on the next
+      // export.
+      const waste = isFinite(m) ? m : null;
       const protein = cell(r, cProtein);
       const starch = cell(r, cStarch);
       const vegs = cell(r, cVegs);
@@ -292,6 +296,11 @@
         name: meal,
         vegName: cVeg >= 0 ? String(r[cVeg] == null ? "" : r[cVeg]).trim() : "",
         wasteGPerEater: waste,
+        // Keep the file's estimate (only when there's no measured value) so a
+        // pool with only estimates round-trips without collapsing to the global
+        // mean. When a measured value is present the app recomputes the estimate
+        // and ignores this (see applyWasteEstimates).
+        wasteEstimate: (waste == null && isFinite(est)) ? est : null,
       };
       // Only attach explicit components when the row actually has them, so a
       // pool file without the columns still falls back to name-derived ones.

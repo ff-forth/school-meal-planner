@@ -85,6 +85,12 @@
         raw.wasteGPerEater != null && !isNaN(raw.wasteGPerEater)
           ? Number(raw.wasteGPerEater)
           : null,
+      // A pool file may carry a component-based estimate. Kept so a pool with
+      // only estimates round-trips (see applyWasteEstimates); normally null.
+      wasteEstimate:
+        raw.wasteEstimate != null && !isNaN(raw.wasteEstimate)
+          ? Number(raw.wasteEstimate)
+          : null,
       timesServed: 0,
       lastSeenDate: raw.date || null,
     };
@@ -110,6 +116,9 @@
         }
         if (m.wasteGPerEater != null && prev.wasteGPerEater == null) {
           prev.wasteGPerEater = m.wasteGPerEater;
+        }
+        if (m.wasteEstimate != null && prev.wasteEstimate == null) {
+          prev.wasteEstimate = m.wasteEstimate;
         }
         if (raw.date && (!prev.lastSeenDate || raw.date > prev.lastSeenDate)) {
           prev.lastSeenDate = raw.date;
@@ -226,10 +235,19 @@
   }
 
   // Attach a `wasteEstimate` to every meal that lacks a measured value.
+  // A meal that already carries an estimate (carried over from a pool file)
+  // keeps it — otherwise a pool with only estimates would collapse every
+  // estimate to the global mean on re-import.
   function applyWasteEstimates(pool) {
     const baseline = buildWasteBaseline(pool);
     for (const m of pool) {
-      m.wasteEstimate = m.wasteGPerEater != null ? null : estimateWaste(m, baseline);
+      if (m.wasteGPerEater != null) {
+        m.wasteEstimate = null;
+      } else if (m.wasteEstimate != null && !isNaN(m.wasteEstimate)) {
+        // keep the carried estimate
+      } else {
+        m.wasteEstimate = estimateWaste(m, baseline);
+      }
     }
     return baseline;
   }
