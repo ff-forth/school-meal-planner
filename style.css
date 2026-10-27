@@ -277,7 +277,7 @@ code { background: var(--bg-body); border: 1px solid var(--border-light); border
 /* Two-column when the swap panel is open: week (left) + picker (right). The
    panel's own width is fixed; the main area takes the rest. */
 .plan-body { padding: var(--space-2); display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-3); }
-.plan-body:has(.swap-panel:not(.hidden)) { grid-template-columns: minmax(0, 1fr) minmax(20rem, 26rem); align-items: start; }
+.plan-body:has(.swap-panel:not(.hidden)) { grid-template-columns: minmax(0, 1fr) minmax(26rem, 38rem); align-items: start; }
 .plan-body-main { min-width: 0; }
 .plan-empty { text-align: center; color: var(--text-light); padding: 3.5rem 1rem; font-size: 0.9rem; }
 .hidden { display: none !important; }
@@ -423,7 +423,7 @@ code { background: var(--bg-body); border: 1px solid var(--border-light); border
   border: 1px solid var(--border-light); border-radius: var(--radius-md);
   background: var(--white); box-shadow: var(--shadow-sm);
   display: flex; flex-direction: column; overflow: hidden;
-  position: sticky; top: var(--space-2); max-height: calc(100vh - 2 * var(--space-2));
+  position: sticky; top: var(--space-2); max-height: 34rem;
 }
 .swap-panel.hidden { display: none; }
 .swap-panel-head {
