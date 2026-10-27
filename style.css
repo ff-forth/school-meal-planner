@@ -307,6 +307,21 @@ code { background: var(--bg-body); border: 1px solid var(--border-light); border
 .plan-table-chips .waste-chip { font-size: 0.78rem; padding: 0.05rem 0.4rem; }
 .plan-table .day-empty { padding: 0; font-size: 0.8rem; }
 
+/* Component totals under the table */
+.plan-table-stats { margin-top: 1rem; }
+.plan-table-stats-title {
+  font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.04em; color: var(--text-muted); margin-bottom: 0.5rem;
+}
+.plan-table-stats-row { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.plan-table-stat {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  background: var(--bg-body); border: 1px solid var(--border-light);
+  border-radius: var(--radius-md); padding: 0.25rem 0.55rem; font-size: 0.82rem;
+}
+.plan-table-stat-label { color: var(--text-main); font-weight: 500; }
+.plan-table-stat-count { color: var(--text-muted); font-weight: 700; }
+
 /* Table cell hover tooltip */
 .cell-tooltip {
   position: fixed; z-index: 60; max-width: 300px;

@@ -443,10 +443,23 @@
       const cls = wv <= 30 ? "low" : wv <= 55 ? "mid" : "high";
       chips.push(`<span class="waste-chip ${cls}${est ? " est" : ""}">${wv} g${est ? "*" : ""}</span>`);
     }
-    const summary = mealSummary(meal, counts);
-    return `<td class='plan-table-cell' data-w='${w}' data-d='${d}' data-name='${esc(meal.name)}' data-summary='${esc(summary)}'>` +
+    return `<td class='plan-table-cell' data-w='${w}' data-d='${d}' data-name='${esc(meal.name)}'>` +
       `<div class='plan-table-chips'>${chips.join("")}</div>` +
       `</td>`;
+  }
+
+  // Component totals across the whole 8-week plan, shown under the table.
+  function componentStatsHTML(counts) {
+    const esc = (s) => String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+    const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+    if (!entries.length) return "";
+    const items = entries.map(([label, n]) =>
+      `<span class="plan-table-stat"><span class="plan-table-stat-label">${esc(label)}</span>` +
+      `<span class="plan-table-stat-count">${n}×</span></span>`
+    ).join("");
+    return `<div class="plan-table-stats">` +
+      `<div class="plan-table-stats-title">Komponenter · 8 veckor</div>` +
+      `<div class="plan-table-stats-row">${items}</div></div>`;
   }
 
   // "Alla" overview as a table: 5 weekday rows × 8 week columns, tags only.
@@ -466,6 +479,7 @@
       html += `</tr>`;
     }
     html += `</tbody></table>`;
+    html += componentStatsHTML(counts);
     const wrap = $("week-cards");
     wrap.innerHTML = html;
     wrap.querySelectorAll(".plan-table-cell").forEach((el) => {
@@ -478,10 +492,7 @@
         const cell = e.target.closest(".plan-table-cell");
         if (!cell || !cell.dataset.name) return;
         $("cell-tooltip-name").textContent = cell.dataset.name;
-        const sum = cell.dataset.summary || "";
-        const sumEl = $("cell-tooltip-summary");
-        sumEl.textContent = sum;
-        sumEl.classList.toggle("hidden", !sum);
+        $("cell-tooltip-summary").classList.add("hidden");
         tip.classList.remove("hidden");
         const r = cell.getBoundingClientRect();
         const tw = tip.offsetWidth, th = tip.offsetHeight;
