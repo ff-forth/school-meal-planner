@@ -843,10 +843,19 @@
       const wv = m.wasteGPerEater != null ? m.wasteGPerEater : m.wasteEstimate;
       const est = m.wasteGPerEater == null;
       const waste = wv != null ? `<span class="pool-item-waste${est ? " est" : ""}" title="${est ? "Uppskattat" : "Mätt"}">${wv} g${est ? "*" : ""}</span>` : "";
+      // Full component breakdown (the raw values from the pool file), e.g.
+      // "Fisk | Potatis | Dillsås | Grillad", so the tags are visible inline.
+      const c = m.components || {};
+      const comps = [c.protein, c.starch, c.sauce, c.prep]
+        .map((s) => String(s || "").trim()).filter(Boolean)
+        .map(esc).join(" · ");
       return `<div class="pool-item" title="${esc(m.name)}${m.vegName ? " (veg: " + esc(m.vegName) + ")" : ""}">` +
-        `<span class="pool-item-name">${esc(m.name)}</span>` +
-        (chips.length ? `<span class="pool-item-chips">${chips.join("")}</span>` : "") +
-        waste +
+        `<span class="pool-item-main">` +
+          `<span class="pool-item-name">${esc(m.name)}</span>` +
+          (chips.length ? `<span class="pool-item-chips">${chips.join("")}</span>` : "") +
+          waste +
+        `</span>` +
+        (comps ? `<span class="pool-item-comps">${comps}</span>` : "") +
         `</div>`;
     };
 
