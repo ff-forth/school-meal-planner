@@ -421,7 +421,7 @@
         }
         rows = rowFor(meal.name, cat, extra);
         if (meal.hasVeg && meal.vegName) {
-          rows += rowFor(meal.vegName, { label: "Vegetariskt", icon: "leaf", cls: "badge-success" }, []);
+          rows += rowFor(meal.vegName, { label: "Vegetariskt", icon: "leaf", cls: "badge-success" }, extra);
         }
       } else {
         rows = `<div class='day-empty'>—</div>`;
