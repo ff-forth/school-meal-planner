@@ -17,6 +17,8 @@
     eval: null,
     viewWeek: "all",  // "all" or a week index (0-based)
     compRules: null,  // structured component-rule rows
+    wasteLookup: null, // {pooled, schools, schoolNames, count} from a rapport file
+    targetSchool: "",  // school to prefer for waste lookup ("" = pooled)
   };
 
   const $ = (id) => document.getElementById(id);
@@ -255,9 +257,21 @@
       }
     }
     const out = RI.finish(loader);
+    // Per-school waste record (rapport): build the lookup even if no menu was
+    // dropped this time, so it can fill in waste once a menu exists.
+    if (out.rapport && out.rapport.length) {
+      app.wasteLookup = global.WasteLookup.build(out.rapport, app.pool || []);
+      app.targetSchool = "";
+      renderSchoolSelect();
+    }
     if (!out.records.length) {
-      status.textContent = "Inga användbara menyrader. Kontrollera att menyn var med.";
-      status.style.color = "var(--danger)";
+      if (app.wasteLookup && app.wasteLookup.count) {
+        status.textContent = `✓ svinn-per-skola: ${app.wasteLookup.count} mätta måltider från ${app.wasteLookup.schoolNames.length} skolor laddade – lägg till en matsedel för att fylla i.`;
+        status.style.color = "var(--primary)";
+      } else {
+        status.textContent = "Inga användbara menyrader. Kontrollera att menyn var med.";
+        status.style.color = "var(--danger)";
+      }
       app.dayRecords = null; app.pool = null;
       checkReady();
       return;
@@ -265,8 +279,10 @@
     app.dayRecords = out.records;
     app.pool = D.buildMealPool(out.records);
     applyEstimates();
-    status.textContent = `✓ ${out.joined}/${out.total} dagar ihopslagna · ${app.pool.length} unika måltider · ` +
+    let line = `✓ ${out.joined}/${out.total} dagar ihopslagna · ${app.pool.length} unika måltider · ` +
       `svinn ${out.stats.min}–${out.stats.max} g/ätande (medelvärde ${out.stats.mean})`;
+    if (app.wasteFilled) line += ` · ${app.wasteFilled} fyllde ur svinn från rapport`;
+    status.textContent = line;
     status.style.color = "var(--primary)";
     $("drop-real").classList.add("ok");
     checkReady();
@@ -342,10 +358,32 @@
     });
   }
 
-  // Attach component-based waste estimates to meals that lack a measured value.
+  // Attach waste to meals that lack a measured value. First fill from the
+  // per-school lookup (real measured waste, matched by combination); any meal
+  // still missing a value gets the component-combination estimate. Meals filled
+  // by a previous lookup are cleared first so a school change re-fills them.
   function applyEstimates() {
     if (!app.pool) return;
+    if (app.wasteLookup && app.wasteLookup.count) {
+      // Clear meals a previous lookup filled so a school change re-fills them.
+      for (const id of (app.wasteFilledIds || [])) {
+        const m = app.pool.find((x) => x.id === id);
+        if (m) m.wasteGPerEater = null;
+      }
+      app.wasteFilledIds = global.WasteLookup.fill(app.pool, app.wasteLookup, app.targetSchool);
+      app.wasteFilled = app.wasteFilledIds.length;
+    }
     app.baseline = D.applyWasteEstimates(app.pool);
+  }
+
+  // Build the "prefer this school's waste" selector from the loaded rapport.
+  function renderSchoolSelect() {
+    const sel = $("school-select");
+    if (!sel) return;
+    const names = (app.wasteLookup && app.wasteLookup.schoolNames) || [];
+    sel.innerHTML = `<option value="">Alla skolor (genomsnitt)</option>` +
+      names.map((n) => `<option value="${n.replace(/"/g, "&quot;")}"${n === app.targetSchool ? " selected" : ""}>${n}</option>`).join("");
+    sel.classList.toggle("hidden", !names.length);
   }
 
   function checkReady() {
@@ -805,6 +843,14 @@
   setupRealDropzone();
   setupSkolmatImport();
   $("btn-sample").addEventListener("click", loadSample);
+  // Prefer a school's waste: re-fill the pool and re-render if a plan exists.
+  $("school-select").addEventListener("change", (e) => {
+    app.targetSchool = e.target.value;
+    if (app.pool) {
+      applyEstimates();
+      if (app.plan) { app.eval = P.evaluatePlan(app.plan, app.criteria); renderPlan(); renderStatus(); }
+    }
+  });
   app.compRules = COMP_RULE_DEFAULTS.map((r) => ({ ...r }));
   renderComponentRules();
   $("btn-add-comp-rule").addEventListener("click", () => {

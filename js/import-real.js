@@ -71,6 +71,16 @@
     return -1;
   }
 
+  // Index of the first column whose normalized header EQUALS `name` (used to
+  // tell "Enhet" apart from "Enhetstyp", which colIndex would match both).
+  function colIndexExact(header, name) {
+    const cells = (header || []).map(norm);
+    for (let j = 0; j < cells.length; j++) {
+      if (cells[j] === name) return j;
+    }
+    return -1;
+  }
+
   function sheetRows(wb, name) {
     const ws = wb.Sheets[name];
     if (!ws) return null;
@@ -80,6 +90,7 @@
   // ---- classifiers by filename ----
   function classify(filename) {
     const n = norm(filename);
+    if (n.includes("rapport")) return "rapport";
     if (n.includes("svinn")) return "waste";
     if (n.includes("portion")) return "portions";
     if (n.includes("matsedel") || n.includes("inskrivna")) return "menu";
@@ -165,6 +176,48 @@
       }
     }
     return byDate; // { "YYYY-MM-DD": totalEaters }
+  }
+
+  // ---- per-school waste record (…rapport… "Hantera livs" export) ----
+  // One row per school-day: Serveringsdatum | Enhet (school) | Antal ätande |
+  // Totalt svinn (kg) | Maträtter (dish name, prefixed "<Enhetstyp>/"). Each
+  // row yields a measured waste-per-eater for that school's dish on that date.
+  // The dish name is cleaned of its "<type>/" prefix and trailing dots, then
+  // decomposed into components so waste can be looked up by combination later.
+  function readRapport(wb) {
+    const records = [];
+    for (const name of Object.keys(wb.Sheets)) {
+      const rows = sheetRows(wb, name);
+      if (!rows) continue;
+      const found = findHeaderRow(rows, ["serveringsdatum", "matratter"]);
+      if (!found) continue;
+      const cDate = colIndex(found.header, "serveringsdatum");
+      const cSchool = colIndexExact(found.header, "enhet");
+      const cEaters = colIndex(found.header, "atande");
+      const cWaste = colIndex(found.header, "totalt svinn");
+      const cMeal = colIndex(found.header, "matratter");
+      if (cDate < 0 || cSchool < 0 || cEaters < 0 || cWaste < 0 || cMeal < 0) continue;
+      for (let i = found.row + 1; i < rows.length; i++) {
+        const r = rows[i];
+        if (!r) continue;
+        const date = toISODate(r[cDate]);
+        if (!date) continue;
+        const raw = String(r[cMeal] == null ? "" : r[cMeal]).trim();
+        if (!raw) continue;
+        const name = raw.replace(/^[^/]+\/\s*/, "").replace(/\s*\.\s*$/, "").trim();
+        if (!name) continue;
+        const eaters = parseFloat(r[cEaters]);
+        const waste = parseFloat(r[cWaste]);
+        if (!isFinite(eaters) || eaters <= 0 || !isFinite(waste)) continue;
+        records.push({
+          date,
+          school: String(r[cSchool] == null ? "" : r[cSchool]).trim(),
+          name,
+          wasteGPerEater: Math.round((waste / eaters) * 1000 * 10) / 10,
+        });
+      }
+    }
+    return records; // [{date, school, name, wasteGPerEater}]
   }
 
   // ---- join ----
@@ -268,7 +321,7 @@
 
   // Accumulator for a set of uploaded files.
   function createLoader() {
-    return { menuDays: [], wasteKg: {}, eaters: {}, stats: {} };
+    return { menuDays: [], wasteKg: {}, eaters: {}, rapport: [], stats: {} };
   }
 
   function addFile(loader, filename, arrayBuffer) {
@@ -276,7 +329,12 @@
     if (!kind) return { kind: null, count: 0, error: "unrecognised file name" };
     const wb = readWorkbook(arrayBuffer);
     let count = 0;
-    if (kind === "menu") {
+    if (kind === "rapport") {
+      const recs = readRapport(wb);
+      for (const r of recs) loader.rapport.push(r);
+      count = recs.length;
+      loader.stats.rapport = loader.rapport.length;
+    } else if (kind === "menu") {
       loader.menuDays = readMenu(wb);
       count = loader.menuDays.length;
       loader.stats.menu = count;
@@ -296,7 +354,9 @@
   }
 
   function finish(loader) {
-    return join(loader.menuDays, loader.wasteKg, loader.eaters);
+    const out = join(loader.menuDays, loader.wasteKg, loader.eaters);
+    out.rapport = loader.rapport || [];
+    return out;
   }
 
   global.RealImport = {
@@ -307,6 +367,8 @@
     readMenu,
     readWaste,
     readPortions,
+    readRapport,
+    colIndexExact,
     join,
     readWorkbook,
     createLoader,

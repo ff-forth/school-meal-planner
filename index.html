@@ -39,7 +39,12 @@
             <li data-kind="menu">○ Meny (…Matsedel…)</li>
             <li data-kind="waste">○ Svinn (…Svinn…)</li>
             <li data-kind="portions">○ Portioner (…Portioner…)</li>
+            <li data-kind="rapport">○ Svinn per skola (…rapport…)</li>
           </ul>
+          <div class="school-select hidden" id="school-select-wrap">
+            <label class="helper-text" for="school-select">Föredra svinn från skola:</label>
+            <select id="school-select" class="inp"></select>
+          </div>
           <div class="btn-row">
             <button id="btn-sample" class="btn btn-ghost">Ladda exempeldata</button>
             <button id="btn-templates" class="btn btn-ghost">⬇ Mallar (.xlsx)</button>
@@ -162,6 +167,7 @@
   <script src="js/xlsx-io.js"></script>
   <script src="js/mining.js"></script>
   <script src="js/planner.js"></script>
+  <script src="js/waste-lookup.js"></script>
   <script src="js/ui.js"></script>
 </body>
 </html>
