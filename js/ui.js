@@ -467,7 +467,7 @@
       chips.push(`<span class="waste-chip ${cls}${est ? " est" : ""}">${wv} g${est ? "*" : ""}</span>`);
     }
     const comps = cellCompLabels(meal).map(esc).join("|");
-    return `<td class='plan-table-cell' data-w='${w}' data-d='${d}' data-name='${esc(meal.name)}' data-comps='${comps}'>` +
+    return `<td class='plan-table-cell' draggable='true' data-w='${w}' data-d='${d}' data-name='${esc(meal.name)}' data-comps='${comps}'>` +
       `<div class='plan-table-chips'>${chips.join("")}</div>` +
       `</td>`;
   }
@@ -508,6 +508,37 @@
     wrap.innerHTML = html;
     wrap.querySelectorAll(".plan-table-cell").forEach((el) => {
       el.addEventListener("click", (e) => { e.stopPropagation(); openPopover(el, e); });
+    });
+    // Drag a cell onto another to swap the two meals (Alla view).
+    let dragFrom = null;
+    wrap.querySelectorAll(".plan-table-cell").forEach((el) => {
+      el.addEventListener("dragstart", (e) => {
+        dragFrom = { w: +el.dataset.w, d: +el.dataset.d };
+        el.classList.add("dragging");
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/plain", "");
+      });
+      el.addEventListener("dragend", () => {
+        el.classList.remove("dragging");
+        wrap.querySelectorAll(".plan-table-cell.drop-target").forEach((c) => c.classList.remove("drop-target"));
+      });
+      el.addEventListener("dragover", (e) => {
+        if (!dragFrom) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        el.classList.add("drop-target");
+      });
+      el.addEventListener("dragleave", () => el.classList.remove("drop-target"));
+      el.addEventListener("drop", (e) => {
+        e.preventDefault();
+        el.classList.remove("drop-target");
+        if (!dragFrom) return;
+        const from = dragFrom;
+        dragFrom = null;
+        const to = { w: +el.dataset.w, d: +el.dataset.d };
+        if (from.w === to.w && from.d === to.d) return;
+        swapMeals(from.w, from.d, to.w, to.d);
+      });
     });
     // Click a component stat to highlight every cell that contains it.
     wrap.querySelectorAll(".plan-table-stat").forEach((el) => {
@@ -694,6 +725,18 @@
     if (!pop.contains(e.target) && !e.target.closest(".cell-card") && !e.target.closest(".menu-editor-compact-row"))
       pop.classList.add("hidden");
   });
+
+  // Swap the meals of two slots (drag-and-drop in the Alla view).
+  function swapMeals(w1, d1, w2, d2) {
+    const a = app.plan[w1][d1], b = app.plan[w2][d2];
+    const tmp = a.meal;
+    a.meal = b.meal;
+    b.meal = tmp;
+    rebuildState();
+    app.eval = P.evaluatePlan(app.plan, app.criteria);
+    renderPlan();
+    renderStatus();
+  }
 
   function rebuildState() {
     app.state.uses = new Map();
