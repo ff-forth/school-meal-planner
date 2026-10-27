@@ -325,6 +325,12 @@
     $("drop-real").classList.add("ok");
     renderSkolmatFileList([]);
     markFileStatus("pool", true, `${label} (${app.pool.length} måltider)`);
+    // If a plan is already on screen, re-render it so pool edits (components,
+    // waste, veg names) show up in the plan immediately.
+    if (app.plan && !$("page-plan").classList.contains("hidden")) {
+      renderWeekTabs();
+      renderPlan();
+    }
     status.textContent = `✓ Pool laddad (${label}) · ${app.pool.length} unika måltider`;
     status.style.color = "var(--primary)";
   }
@@ -350,9 +356,31 @@
     app.dayRecords = records;
     app.pool = records.length ? D.buildMealPool(records) : null;
     applyEstimates();
+    syncPlanToPool();
     if (app.viewWeek === "pool") renderPoolOverview();
     checkReady();
     return joined;
+  }
+
+  // Keep the loaded plan in sync with the pool. Plan slots hold meal snapshots,
+  // so when the pool changes (e.g. the user edits the component/waste columns in
+  // the pool xlsx and reloads it) the plan must re-point each slot at the current
+  // pool meal — otherwise plan edits to the pool would never show up. Matched
+  // slots are swapped for the pool object; unmatched slots keep their snapshot
+  // (a meal that was removed from the pool still shows its last-known data).
+  // state.uses/lastUsed are keyed by meal.id (the name slug), which is stable
+  // across a re-point, so no rebuild is needed.
+  function syncPlanToPool() {
+    if (!app.plan || !app.pool || !app.pool.length) return;
+    const byName = new Map(app.pool.map((m) => [m.name, m]));
+    for (const week of app.plan) {
+      if (!week) continue;
+      for (const slot of week) {
+        if (!slot || !slot.meal) continue;
+        const fresh = byName.get(slot.meal.name);
+        if (fresh && fresh !== slot.meal) slot.meal = fresh;
+      }
+    }
   }
 
   async function handleRealFiles(files) {
