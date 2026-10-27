@@ -335,7 +335,15 @@
       count = recs.length;
       loader.stats.rapport = loader.rapport.length;
     } else if (kind === "menu") {
-      loader.menuDays = readMenu(wb);
+      // Accumulate across multiple matsedel files. Dedupe by date so two
+      // overlapping menus don't double-count a day (later file wins); menus
+      // for different weeks both survive.
+      const days = readMenu(wb);
+      const byDate = new Map((loader.menuDays || []).map((d) => [d.date, d]));
+      for (const d of days) byDate.set(d.date, d);
+      loader.menuDays = Array.from(byDate.values()).sort((a, b) =>
+        a.date < b.date ? -1 : a.date > b.date ? 1 : 0
+      );
       count = loader.menuDays.length;
       loader.stats.menu = count;
     } else if (kind === "waste") {
