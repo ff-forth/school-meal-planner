@@ -91,9 +91,10 @@
   function classify(filename) {
     const n = norm(filename);
     if (n.includes("rapport")) return "rapport";
+    if (n.includes("svinn-report")) return "svinnreport";
     if (n.includes("svinn")) return "waste";
     if (n.includes("portion")) return "portions";
-    if (n.includes("matsedel") || n.includes("inskrivna")) return "menu";
+    if (n.includes("matsedel") || n.includes("inskrivna") || n.includes("skolmat")) return "menu";
     return null;
   }
 
@@ -109,7 +110,9 @@
     const { row, header } = findHeaderRow(rows, ["datum", "veckodag"]);
     const cDate = colIndex(header, "datum");
     const cDay = colIndex(header, "veckodag");
-    const cA1 = colIndex(header, "alternativ 1");
+    const cA1 = colIndex(header, "alternativ 1") >= 0
+      ? colIndex(header, "alternativ 1")
+      : colIndex(header, "maltid"); // full-format menu uses "Måltid"
     const cVeg = colIndex(header, "vegetar");
     const out = [];
     for (let i = row + 1; i < rows.length; i++) {
@@ -176,6 +179,35 @@
       }
     }
     return byDate; // { "YYYY-MM-DD": totalEaters }
+  }
+
+  // ---- clean svinn report (…svinn-report-YYYY-MM-DD-YYYY-MM-DD.xlsx) ----
+  // One sheet "Svinn report": Enhet | Datum | Antal ätande | Totalt svinn (kg)
+  // | Svinn/ätande (mätt). Rows are per unit+date; for the menu join we
+  // aggregate to per-date totals (sum eaters and waste across units).
+  function readSvinnReport(wb) {
+    const byDate = { eaters: {}, waste: {} };
+    for (const name of Object.keys(wb.Sheets)) {
+      const rows = sheetRows(wb, name);
+      if (!rows) continue;
+      const found = findHeaderRow(rows, ["enhet", "datum", "atande", "svinn"]);
+      if (!found) continue;
+      const cDate = colIndex(found.header, "datum");
+      const cEaters = colIndex(found.header, "atande");
+      const cWaste = colIndex(found.header, "totalt svinn");
+      if (cDate < 0) continue;
+      for (let i = found.row + 1; i < rows.length; i++) {
+        const r = rows[i];
+        if (!r) continue;
+        const date = toISODate(r[cDate]);
+        if (!date) continue;
+        const e = cEaters >= 0 ? parseFloat(r[cEaters]) : NaN;
+        const w = cWaste >= 0 ? parseFloat(r[cWaste]) : NaN;
+        if (isFinite(e)) byDate.eaters[date] = (byDate.eaters[date] || 0) + e;
+        if (isFinite(w)) byDate.waste[date] = (byDate.waste[date] || 0) + w;
+      }
+    }
+    return byDate; // { eaters: {date: n}, waste: {date: kg} }
   }
 
   // ---- per-school waste record (…rapport… "Hantera livs" export) ----
@@ -346,6 +378,14 @@
       );
       count = loader.menuDays.length;
       loader.stats.menu = count;
+    } else if (kind === "svinnreport") {
+      // Clean per-unit report: aggregate eaters + waste to per-date totals.
+      const sr = readSvinnReport(wb);
+      for (const k of Object.keys(sr.waste)) loader.wasteKg[k] = (loader.wasteKg[k] || 0) + sr.waste[k];
+      for (const k of Object.keys(sr.eaters)) loader.eaters[k] = (loader.eaters[k] || 0) + sr.eaters[k];
+      count = Math.max(Object.keys(sr.waste).length, Object.keys(sr.eaters).length);
+      loader.stats.wasteDates = Object.keys(loader.wasteKg).length;
+      loader.stats.eaterDates = Object.keys(loader.eaters).length;
     } else if (kind === "waste") {
       const w = readWaste(wb);
       for (const k of Object.keys(w)) loader.wasteKg[k] = (loader.wasteKg[k] || 0) + w[k];
@@ -375,6 +415,7 @@
     readMenu,
     readWaste,
     readPortions,
+    readSvinnReport,
     readRapport,
     colIndexExact,
     join,
