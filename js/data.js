@@ -198,13 +198,16 @@
   // holiday/placeholder day) — a non-meal should not be given a fake figure.
   function estimateWaste(meal, baseline) {
     if (!baseline || !baseline.global) return null;
+    const present = COMBO_DIMS.filter((d) => dimValue(meal, d));
+    if (!present.length) return null; // no components -> not a real meal to estimate
     const levels = comboLevels(meal);
-    if (!levels.length) return null; // no components -> not a real meal to estimate
     for (const dims of levels) {
       const key = comboKey(meal, dims);
       const g = key && baseline.combos[key];
       if (g && g.n >= COMBO_MIN_N) return Math.round(g.mean * 10) / 10;
     }
+    // Single-component meal (or no combination with enough data): use the global
+    // mean so every real candidate meal gets a re-estimable figure.
     return Math.round(baseline.global * 10) / 10;
   }
 
