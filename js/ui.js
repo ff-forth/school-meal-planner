@@ -148,8 +148,8 @@
       maxUses: $("c-maxuse").value,
       preferLowWaste: $("c-prefer-waste").checked,
       maxAvgWaste: $("c-max-waste").value,
-      excludedAllergens: $("c-allergens").value,
-      required: $("c-required").value,
+      excludedAllergens: "",
+      required: "",
       componentRules: readComponentRules(),
     });
   }
