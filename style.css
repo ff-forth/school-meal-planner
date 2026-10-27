@@ -288,6 +288,12 @@ code { background: var(--bg-body); border: 1px solid var(--border-light); border
 .menu-editor-compact-row-actions .btn { min-height: 28px; padding: 0.2rem 0.5rem; font-size: 0.72rem; white-space: nowrap; }
 .day-empty { color: var(--text-light); font-size: 0.9rem; padding: var(--space-2); }
 
+/* "Alla" overview: compact rows (tags only, tighter) */
+.menu-editor-compact-row.compact { padding: 0.3rem 0.5rem; align-items: center; }
+.menu-editor-compact-row.compact .menu-editor-compact-allergen-list { margin-top: 0; gap: 0.3rem; }
+.menu-editor-compact-row.compact .menu-editor-compact-allergen-chip { padding: 0.1rem 0.35rem; font-size: 0.68rem; }
+.menu-editor-compact-row.compact .menu-editor-compact-row-actions { display: none; }
+
 /* ---------- Popover ---------- */
 .popover {
   position: fixed; z-index: 50; width: 360px; max-height: 440px;

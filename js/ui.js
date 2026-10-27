@@ -89,6 +89,34 @@
     return null;
   }
 
+  // ---------- Plan-wide component tally (for the "Alla" hover summary) ----------
+  // Counts how often each category label (protein / starch / soup / theme)
+  // appears across the whole plan, e.g. { "Fläsk": 5, "Fisk": 8, "Potatis": 12 }.
+  function planCategoryCounts() {
+    const counts = {};
+    const bump = (label) => { if (label) counts[label] = (counts[label] || 0) + 1; };
+    for (let w = 0; w < D.WEEKS; w++)
+      for (let d = 0; d < D.DAYS.length; d++) {
+        const m = app.plan[w][d].meal;
+        if (!m) continue;
+        const cat = categoryOf(m); if (cat) bump(cat.label);
+        const st = starchOf(m); if (st) bump(st.label);
+        const sp = soupOf(m); if (sp) bump(sp.label);
+        if (m.components && m.components.theme) bump(m.components.theme);
+      }
+    return counts;
+  }
+
+  // "Fläsk 5×, Potatis 12×, Soppa 8×" for the components a meal belongs to.
+  function mealSummary(meal, counts) {
+    const parts = [];
+    const cat = categoryOf(meal); if (cat) parts.push(`${cat.label} ${counts[cat.label] || 0}×`);
+    const st = starchOf(meal); if (st) parts.push(`${st.label} ${counts[st.label] || 0}×`);
+    const sp = soupOf(meal); if (sp) parts.push(`${sp.label} ${counts[sp.label] || 0}×`);
+    if (meal.components && meal.components.theme) parts.push(`${meal.components.theme} ${counts[meal.components.theme] || 0}×`);
+    return parts.join(", ");
+  }
+
   // ---------- Criteria ----------
   // ---------- Component rules (fixed structured rows) ----------
   const COMP_RULE_DEFAULTS = [
@@ -385,16 +413,20 @@
     }
     empty.classList.add("hidden");
     cards.classList.remove("hidden");
-    // "all" renders every week stacked with a header; a number renders just that week.
-    const weeks = app.viewWeek === "all"
-      ? Array.from({ length: D.WEEKS }, (_, i) => i)
-      : [app.viewWeek];
-    renderWeekCards(weeks);
+    // "all" renders every week stacked with a header (compact: tags only);
+    // a number renders just that week (full: name + chips).
+    const all = app.viewWeek === "all";
+    const weeks = all ? Array.from({ length: D.WEEKS }, (_, i) => i) : [app.viewWeek];
+    renderWeekCards(weeks, all);
   }
 
   // ---------- Skolmat day cards (one or many weeks) ----------
-  function renderWeekCards(weeks) {
+  // compact: the "Alla" overview — show only the tag chips (no meal name);
+  // hovering a day reveals the name + a component-count summary.
+  function renderWeekCards(weeks, compact) {
     const wrap = $("week-cards");
+    const counts = compact ? planCategoryCounts() : null;
+    const esc = (s) => String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/"/g, "&quot;");
     let html = "";
     for (const w of weeks) {
       // Week header (only when showing multiple weeks)
@@ -414,19 +446,6 @@
       const date = slot ? formatDateSV(slot.date) : "";
       let rows;
       if (meal) {
-        // Render the regular and vegetarian meals as two separate rows.
-        const rowFor = (name, cat, extraChips) => {
-          const chips = [];
-          if (cat) chips.push(chipHTML(cat.icon, cat.label, cat.cls));
-          (extraChips || []).forEach(c => chips.push(c));
-          return `<div class='menu-editor-compact-row' data-w='${w}' data-d='${d}'>` +
-            `<div class='menu-editor-compact-row-main'>` +
-            `<p class='meal-text'>${name}</p>` +
-            (chips.length ? `<div class='menu-editor-compact-allergen-list'>${chips.join("")}</div>` : "") +
-            `</div>` +
-            `<div class='menu-editor-compact-row-actions'><button class='btn btn-ghost'>Byt</button></div>` +
-            `</div>`;
-        };
         const cat = categoryOf(meal);
         const starch = starchOf(meal);
         const soup = soupOf(meal);
@@ -441,9 +460,37 @@
           const title = est ? "Uppskattat svinn per ätande (från komponenter)" : "Svinn per ätande";
           extra.push(`<span class="waste-chip ${cls}${est ? " est" : ""}" title="${title}">${wv} g${est ? "*" : ""}</span>`);
         }
-        rows = rowFor(meal.name, cat, extra);
-        if (meal.hasVeg && meal.vegName) {
-          rows += rowFor(meal.vegName, { label: "Vegetariskt", icon: "leaf", cls: "badge-success" }, extra);
+        // Compact (Alla): chips only, with a hover tooltip of name + summary.
+        if (compact) {
+          const chips = [];
+          if (cat) chips.push(chipHTML(cat.icon, cat.label, cat.cls));
+          extra.forEach(c => chips.push(c));
+          const summary = mealSummary(meal, counts);
+          const tip = esc(meal.name) + (summary ? `<br>${esc(summary)}` : "");
+          rows = `<div class='menu-editor-compact-row compact' data-w='${w}' data-d='${d}' title='${tip}'>` +
+            `<div class='menu-editor-compact-row-main'>` +
+            (chips.length ? `<div class='menu-editor-compact-allergen-list'>${chips.join("")}</div>` : `<span class='day-empty'>—</span>`) +
+            `</div>` +
+            `<div class='menu-editor-compact-row-actions'><button class='btn btn-ghost'>Byt</button></div>` +
+            `</div>`;
+        } else {
+          // Full (single week): name + chips.
+          const rowFor = (name, c2, extraChips) => {
+            const chips = [];
+            if (c2) chips.push(chipHTML(c2.icon, c2.label, c2.cls));
+            (extraChips || []).forEach(c => chips.push(c));
+            return `<div class='menu-editor-compact-row' data-w='${w}' data-d='${d}'>` +
+              `<div class='menu-editor-compact-row-main'>` +
+              `<p class='meal-text'>${name}</p>` +
+              (chips.length ? `<div class='menu-editor-compact-allergen-list'>${chips.join("")}</div>` : "") +
+              `</div>` +
+              `<div class='menu-editor-compact-row-actions'><button class='btn btn-ghost'>Byt</button></div>` +
+              `</div>`;
+          };
+          rows = rowFor(meal.name, cat, extra);
+          if (meal.hasVeg && meal.vegName) {
+            rows += rowFor(meal.vegName, { label: "Vegetariskt", icon: "leaf", cls: "badge-success" }, extra);
+          }
         }
       } else {
         rows = `<div class='day-empty'>—</div>`;
