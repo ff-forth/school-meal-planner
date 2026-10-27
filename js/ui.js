@@ -294,8 +294,14 @@
     renderWeekTabs();
     renderPlan();
     showPlanPage();
-    status.textContent = `✓ Plan laddad (${label}) · ${matched}/${rows.length} rätter matchade mot menyn.`;
-    status.style.color = "var(--primary)";
+    if (!app.pool || matched < rows.length) {
+      // Plan meals only carry components/waste when the pool is loaded first.
+      status.textContent = `⚠ Plan laddad (${label}) · ${matched}/${rows.length} rätter matchade mot poolen. Ladda poolen först (1. Ladda pool) så får rätterna med komponenter och svinn.`;
+      status.style.color = "var(--warn, #b45309)";
+    } else {
+      status.textContent = `✓ Plan laddad (${label}) · ${matched}/${rows.length} rätter matchade mot poolen.`;
+      status.style.color = "var(--primary)";
+    }
   }
 
   // Rebuild the candidate pool from a saved pool file's records and show it.

@@ -20,9 +20,9 @@
       <div class="header-right">
         <button id="btn-back" class="btn btn-ghost hidden">← Ändra inställningar</button>
         <input type="file" id="file-pool" accept=".xlsx,.xls" hidden />
-        <button id="btn-pool" class="btn btn-ghost hidden">📂 Ladda pool</button>
+        <button id="btn-pool" class="btn btn-ghost hidden" title="Ladda poolen först (alla måltider + komponenter), sedan planen">📂 1. Ladda pool</button>
         <input type="file" id="file-plan" accept=".xlsx,.xls" hidden />
-        <button id="btn-plan" class="btn btn-ghost hidden">📂 Ladda plan</button>
+        <button id="btn-plan" class="btn btn-ghost hidden" title="Ladda en sparad 8-veckorsplan (kräver att poolen är laddad)">📂 2. Ladda plan</button>
         <button id="btn-download-pool" class="btn btn-ghost hidden">⬇ Ladda ner pool (.xlsx)</button>
         <button id="btn-download-plan" class="btn btn-primary hidden">⬇ Ladda ner plan (.xlsx)</button>
       </div>
@@ -53,10 +53,12 @@
 
           <h3 class="input-section-title">Plandata</h3>
           <p class="helper-text">
-            Ladda in en tidigare exporterad 8-veckorsplan för att fortsätta arbeta med den,
-            eller ladda poolen (alla måltider med svinn/ätande + komponenter) separat så att
-            planen kan återupptas utan att hela menyn behöver laddas igen. Använd knapparna
-            <b>Ladda plan</b> / <b>Ladda pool</b> i toppen – de fungerar även på plansidan.
+            För att återuppta en sparad plan, ladda <b>båda</b> – i denna ordning:
+            <b>1. Pool</b> (alla måltider med svinn/ätande + komponenter), sedan
+            <b>2. Plan</b> (den 8-veckorsplanen). Planens rätter matchas mot poolen
+            efter namn, så poolen måste vara laddad först för att rätterna ska få med
+            komponenter och svinn. Knapparna <b>1. Ladda pool</b> / <b>2. Ladda plan</b>
+            i toppen fungerar även på plansidan.
           </p>
 
           <h3 class="input-section-title">Skolmat (.json)</h3>
