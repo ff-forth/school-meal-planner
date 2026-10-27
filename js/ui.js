@@ -50,6 +50,7 @@
     beef: '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c5 0 9 3 9 7s-4 7-9 7-9-3-9-7 4-7 9-7Z"/><path d="M9 10c1.2-1.2 3.4-1.2 4.6 0"/><path d="M9 14c1.2-1.2 3.4-1.2 4.6 0"/></svg>',
     pork: '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="9" width="20" height="6" rx="3"/><path d="M8 9v6"/><path d="M16 9v6"/></svg>',
     leaf: '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>',
+    wheat: '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 22 16 8"/><path d="M3.47 12.53 5 11l1.5 1.5a1 1 0 0 1 0 1.4l-1.5 1.5a1 1 0 0 1-1.4 0L2.1 13.9a1 1 0 0 1 0-1.4Z"/><path d="M7.47 8.53 9 7l1.5 1.5a1 1 0 0 1 0 1.4L9 11.4a1 1 0 0 1-1.4 0L6.1 9.9a1 1 0 0 1 0-1.4Z"/><path d="M11.47 4.53 13 3l1.5 1.5a1 1 0 0 1 0 1.4L13 7.4a1 1 0 0 1-1.4 0L10.1 5.9a1 1 0 0 1 0-1.4Z"/><path d="m12.5 12.5 2.1 2.1a1 1 0 0 1 0 1.4l-2.1 2.1a1 1 0 0 1-1.4 0L9 16"/><path d="m14.5 6.5 2.1 2.1a1 1 0 0 1 0 1.4L14.5 12a1 1 0 0 1-1.4 0L11 9.9"/></svg>',
   };
   function categoryOf(meal) {
     const p = (meal.components && meal.components.protein ? meal.components.protein : "");
@@ -57,13 +58,26 @@
     if (/kyckling|fågel|pullad|gyros/.test(p)) return { label: "Fågel", icon: "drumstick", cls: "badge-neutral" };
     if (/soja|vego|balj|kikarts|linse|falafel|ost/.test(p)) return { label: "Vegetariskt", icon: "leaf", cls: "badge-success" };
     // pork (griskött) vs beef (nötkött) — these are distinct and must be shown separately
-    if (/flask|falukorv|korv|wienerkorv|blodpudding/.test(p)) return { label: "Griskött", icon: "pork", cls: "badge-warning" };
+    if (/flask|falukorv|korv|wienerkorv|blodpudding/.test(p)) return { label: "Fläsk", icon: "pork", cls: "badge-warning" };
     if (/kott|farsbiff|kalops|biff/.test(p)) return { label: "Nötkött", icon: "beef", cls: "badge-neutral" };
     if (p) return { label: "Kött", icon: "beef", cls: "badge-neutral" };
     return null;
   }
   function chipHTML(icon, label, cls) {
     return `<span class="menu-editor-compact-allergen-chip ${cls || ""}">${ICONS[icon] || ""}${label}</span>`;
+  }
+
+  // ---------- Starch badge (ris/potatis/pasta/bröd) — for quick skimming ----------
+  function starchOf(meal) {
+    const s = (meal.components && meal.components.starch ? meal.components.starch : "").toLowerCase();
+    if (!s) return null;
+    if (/ris|risotto|nasi/.test(s)) return { label: "Ris", icon: "wheat", cls: "badge-info" };
+    if (/potatis|mos|solskensmos|klyft/.test(s)) return { label: "Potatis", icon: "wheat", cls: "badge-warning" };
+    if (/pasta|spagetti|nudlar|makaroner/.test(s)) return { label: "Pasta", icon: "wheat", cls: "badge-neutral" };
+    if (/lasagne|lasangette|lasagnette/.test(s)) return { label: "Lasagne", icon: "wheat", cls: "badge-neutral" };
+    if (/bulgur/.test(s)) return { label: "Bulgur", icon: "wheat", cls: "badge-neutral" };
+    if (/brod|tortilla|paella|knacke/.test(s)) return { label: "Bröd", icon: "wheat", cls: "badge-neutral" };
+    return { label: s, icon: "wheat", cls: "badge-neutral" };
   }
 
   // ---------- Criteria ----------
@@ -383,7 +397,9 @@
             `</div>`;
         };
         const cat = categoryOf(meal);
+        const starch = starchOf(meal);
         const extra = [];
+        if (starch) extra.push(chipHTML(starch.icon, starch.label, starch.cls));
         if (meal.components.theme) extra.push(chipHTML(null, meal.components.theme, "badge-info"));
         const wv = meal.wasteGPerEater != null ? meal.wasteGPerEater : meal.wasteEstimate;
         if (wv != null) {
