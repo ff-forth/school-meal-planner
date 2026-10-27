@@ -45,11 +45,16 @@
         // Real calendar week (from the date), falling back to the positional
         // index when a slot has no date.
         const week = isoWeek(day.date) != null ? isoWeek(day.date) : w + 1;
+        // Waste: measured when available, otherwise the component-based
+        // estimate (so the column is filled even for pool-only meals).
+        const waste = meal
+          ? (meal.wasteGPerEater != null ? meal.wasteGPerEater : (meal.wasteEstimate != null ? meal.wasteEstimate : ""))
+          : "";
         aoa.push([
           week, DAY_SV[d], day.date || "",
           meal ? meal.name : "",
           meal && meal.vegName ? meal.vegName : "",
-          meal && meal.wasteGPerEater != null ? meal.wasteGPerEater : "",
+          waste,
         ]);
       }
     }
