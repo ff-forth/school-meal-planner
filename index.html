@@ -19,6 +19,10 @@
       </div>
       <div class="header-right">
         <button id="btn-back" class="btn btn-ghost hidden">← Ändra inställningar</button>
+        <input type="file" id="file-pool" accept=".xlsx,.xls" hidden />
+        <button id="btn-pool" class="btn btn-ghost hidden">📂 Ladda pool</button>
+        <input type="file" id="file-plan" accept=".xlsx,.xls" hidden />
+        <button id="btn-plan" class="btn btn-ghost hidden">📂 Ladda plan</button>
         <button id="btn-download-pool" class="btn btn-ghost hidden">⬇ Ladda ner pool (.xlsx)</button>
         <button id="btn-download-plan" class="btn btn-primary hidden">⬇ Ladda ner plan (.xlsx)</button>
       </div>
@@ -26,7 +30,8 @@
   </header>
 
   <main class="container">
-    <!-- Data panel: always visible so a pool/plan can be loaded from the plan view -->
+    <!-- PAGE 1: setup (steps 1-3) -->
+    <div id="page-setup" class="page">
     <section class="report-panel">
         <h2 class="report-panel-title"><span class="num">1</span> Data</h2>
         <div class="panel-body">
@@ -47,18 +52,11 @@
           </div>
 
           <h3 class="input-section-title">Plandata</h3>
-          <div class="btn-row">
-            <input type="file" id="file-plan" accept=".xlsx,.xls" hidden />
-            <button id="btn-plan" class="btn btn-ghost">📂 Importera sparad plan (…skolmat-plan…)</button>
-          </div>
-          <div class="btn-row">
-            <input type="file" id="file-pool" accept=".xlsx,.xls" hidden />
-            <button id="btn-pool" class="btn btn-ghost">📂 Importera pool (…skolmat-pool…)</button>
-          </div>
           <p class="helper-text">
-            Ladda in en tidigare exporterad 8-veckorsplan för att fortsätta arbeta med den.
-            Poolen (alla måltider med svinn/ätande + komponenter) kan laddas in separat så att
-            planen kan återupptas utan att hela menyn behöver laddas igen.
+            Ladda in en tidigare exporterad 8-veckorsplan för att fortsätta arbeta med den,
+            eller ladda poolen (alla måltider med svinn/ätande + komponenter) separat så att
+            planen kan återupptas utan att hela menyn behöver laddas igen. Använd knapparna
+            <b>Ladda plan</b> / <b>Ladda pool</b> i toppen – de fungerar även på plansidan.
           </p>
 
           <h3 class="input-section-title">Skolmat (.json)</h3>
@@ -76,8 +74,6 @@
         </div>
       </section>
 
-    <!-- PAGE 1: setup (steps 2-3) -->
-    <div id="page-setup" class="page">
       <section class="report-panel">
         <h2 class="report-panel-title"><span class="num">2</span> Kriterier</h2>
         <div class="panel-body">

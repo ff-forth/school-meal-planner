@@ -609,6 +609,10 @@
     $("btn-download-plan").classList.remove("hidden");
     const poolBtn = $("btn-download-pool");
     if (poolBtn) poolBtn.classList.remove("hidden");
+    // Header load buttons are reachable from the plan view (load a pool/plan
+    // without going back to setup).
+    $("btn-pool").classList.remove("hidden");
+    $("btn-plan").classList.remove("hidden");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
   function showSetupPage() {
@@ -618,6 +622,8 @@
     $("btn-download-plan").classList.add("hidden");
     const poolBtn = $("btn-download-pool");
     if (poolBtn) poolBtn.classList.add("hidden");
+    $("btn-pool").classList.remove("hidden");
+    $("btn-plan").classList.remove("hidden");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
   $("btn-back").addEventListener("click", showSetupPage);
@@ -1051,6 +1057,9 @@
   setupSkolmatImport();
   setupPlanImport();
   setupPoolImport();
+  // Header load buttons are available from the start (setup and plan views).
+  $("btn-pool").classList.remove("hidden");
+  $("btn-plan").classList.remove("hidden");
   // Prefer a school's waste: re-fill the pool and re-render if a plan exists.
   $("school-select").addEventListener("change", (e) => {
     app.targetSchool = e.target.value;
