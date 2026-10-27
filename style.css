@@ -320,7 +320,8 @@ code { background: var(--bg-body); border: 1px solid var(--border-light); border
   border-radius: var(--radius-md); padding: 0.25rem 0.55rem; font-size: 0.82rem;
 }
 .plan-table-stat-label { color: var(--text-main); font-weight: 500; }
-.plan-table-stat-count { color: var(--text-muted); font-weight: 700; }
+.plan-table-stat-count { color: var(--text-muted); font-weight: 400; }
+.plan-table-stat-count b { font-weight: 700; }
 
 /* Table cell hover tooltip */
 .cell-tooltip {

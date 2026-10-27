@@ -455,7 +455,7 @@
     if (!entries.length) return "";
     const items = entries.map(([label, n]) =>
       `<span class="plan-table-stat"><span class="plan-table-stat-label">${esc(label)}</span>` +
-      `<span class="plan-table-stat-count">${n} ggr</span></span>`
+      `<span class="plan-table-stat-count"><b>${n}</b> ggr</span></span>`
     ).join("");
     return `<div class="plan-table-stats">` +
       `<div class="plan-table-stats-title">Komponenter · 8 veckor</div>` +
