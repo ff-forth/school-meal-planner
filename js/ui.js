@@ -130,13 +130,22 @@
   // ---------- Criteria ----------
   // ---------- Component rules (fixed structured rows) ----------
   const COMP_RULE_DEFAULTS = [
-    { name: "Fläsk", kind: "max", count: 2, period: "week" },
-    { name: "Korv", kind: "max", count: 1, period: "14d" },
-    { name: "Ris", kind: "max", count: 1, period: "14d" },
-    { name: "Soppa", kind: "exact", count: 1, period: "week" },
-    { name: "Fisk", kind: "min", count: 1, period: "week" },
-    { name: "Kyckling", kind: "min", count: 1, period: "week" },
+    { name: "Fläsk", kind: "max", count: 2, period: "week", day: "" },
+    { name: "Korv", kind: "max", count: 1, period: "14d", day: "" },
+    { name: "Ris", kind: "max", count: 1, period: "14d", day: "" },
+    { name: "Soppa", kind: "exact", count: 1, period: "week", day: "" },
+    { name: "Fisk", kind: "min", count: 1, period: "week", day: "" },
+    { name: "Kyckling", kind: "min", count: 1, period: "week", day: "" },
   ];
+
+  // Day-of-week options ("" = any day). Used for the optional preferred day.
+  function compRuleDayOptions(selected) {
+    const opts = [`<option value=""${!selected ? " selected" : ""}>–</option>`];
+    for (let d = 0; d < D.DAYS.length; d++) {
+      opts.push(`<option value="${d}"${String(selected) === String(d) ? " selected" : ""}>${DAY_SV[d]}</option>`);
+    }
+    return opts.join("");
+  }
 
   function compRuleRowHTML(r) {
     const esc = (s) => String(s || "").replace(/"/g, "&quot;");
@@ -152,6 +161,7 @@
         `<option value="week"${r.period === "week" ? " selected" : ""}>vecka</option>` +
         `<option value="14d"${r.period === "14d" ? " selected" : ""}>14 dagar</option>` +
       `</select>` +
+      `<select class="inp comp-rule-day" title="Önskad dag (valfritt)">${compRuleDayOptions(r.day)}</select>` +
       `<button type="button" class="comp-rule-remove" title="Ta bort" aria-label="Ta bort">×</button>` +
       `</div>`;
   }
@@ -166,6 +176,7 @@
       kind: row.querySelector(".comp-rule-kind").value,
       count: parseInt(row.querySelector(".comp-rule-count").value, 10) || 1,
       period: row.querySelector(".comp-rule-period").value,
+      day: row.querySelector(".comp-rule-day").value,
     }));
   }
 
@@ -199,8 +210,10 @@
       const kind = row.querySelector(".comp-rule-kind").value;
       const count = parseInt(row.querySelector(".comp-rule-count").value, 10);
       const period = row.querySelector(".comp-rule-period").value;
+      const dayRaw = row.querySelector(".comp-rule-day").value;
+      const day = dayRaw === "" ? null : parseInt(dayRaw, 10);
       if (!name || !count) continue;
-      rules.push({ name, kind, count, period });
+      rules.push({ name, kind, count, period, day });
     }
     return rules;
   }
@@ -716,7 +729,8 @@
       const issue = ev.issues.find((i) => i.startsWith(r.name + ":"));
       const per = r.period === "14d" ? "14d" : "v";
       const sym = r.kind === "max" ? `≤${r.count}/${per}` : r.kind === "exact" ? `=${r.count}/${per}` : `≥${r.count}/${per}`;
-      const label = r.name + " " + sym;
+      const day = r.day != null && r.day !== "" && r.day >= 0 ? ` (${DAY_SV[r.day].slice(0, 3)})` : "";
+      const label = r.name + " " + sym + day;
       chips.push(chip(issue ? "warn" : "ok", `${issue ? label + " ⚠" : label + " ✓"}`));
     }
     $("status-bar").innerHTML = chips.join(" ");

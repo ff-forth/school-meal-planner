@@ -149,6 +149,7 @@
   function componentRuleScore(meal, dayIdx, state, rules) {
     let score = 0;
     const reasons = [];
+    const weekday = dayIdx % D.DAYS.length;
     for (const r of rules) {
       if (!mealHasComponent(meal, r.name)) continue;
       const has = (m) => mealHasComponent(m, r.name);
@@ -164,6 +165,15 @@
         if (c < r.count) {
           score += 1.2;
           reasons.push(`${r.name} behövs denna vecka`);
+        }
+      }
+      // Optional preferred day: nudge the component toward that weekday.
+      if (r.day != null && r.day >= 0) {
+        if (weekday === r.day) {
+          score += 1.0;
+          reasons.push(`${r.name} föredragen dag`);
+        } else {
+          score -= 0.3;
         }
       }
     }

@@ -143,7 +143,7 @@ code { background: var(--bg-body); border: 1px solid var(--border-light); border
 /* Component-rule rows (fixed structured inputs) */
 .comp-rules { display: grid; gap: var(--space-1); }
 .comp-rule {
-  display: grid; grid-template-columns: minmax(0, 1fr) 74px 48px 92px 26px;
+  display: grid; grid-template-columns: minmax(0, 1fr) 74px 48px 92px 88px 26px;
   gap: 0.4rem; align-items: center;
 }
 .comp-rule .inp { padding: 0.3rem 0.4rem; font-size: 0.8rem; box-sizing: border-box; }
@@ -155,7 +155,7 @@ code { background: var(--bg-body); border: 1px solid var(--border-light); border
 }
 .comp-rule .comp-rule-remove:hover { background: var(--danger); color: var(--white); }
 @media (max-width: 480px) {
-  .comp-rule { grid-template-columns: minmax(0, 1fr) 64px 40px 78px 22px; gap: 0.3rem; }
+  .comp-rule { grid-template-columns: minmax(0, 1fr) 60px 40px 70px 70px 22px; gap: 0.3rem; }
 }
 .check-row { display: flex; align-items: center; gap: 0.5rem; font-size: 0.88rem; cursor: pointer; }
 .check-row input { accent-color: var(--primary); width: 1rem; height: 1rem; }
