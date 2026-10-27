@@ -215,13 +215,16 @@
           reasons.push(`${r.name} behövs denna vecka`);
         }
       }
-      // Optional preferred day: nudge the component toward that weekday.
+      // Optional preferred day: top-priority nudge placing the component on
+      // that weekday. Strong enough to dominate the other soft signals
+      // (frequency/sequence/waste are all < 1.5), while the hard caps and
+      // min/exact counts still take precedence over it.
       if (r.day != null && r.day >= 0) {
         if (weekday === r.day) {
-          score += 1.0;
+          score += 3.0;
           reasons.push(`${r.name} föredragen dag`);
         } else {
-          score -= 0.3;
+          score -= 2.0;
         }
       }
     }
