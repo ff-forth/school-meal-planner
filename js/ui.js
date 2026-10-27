@@ -30,6 +30,17 @@
     return `${d} ${MONTH_SV[m - 1]}`;
   }
 
+  // ISO-8601 calendar week number (1-53), like vecka.nu.
+  function isoWeek(iso) {
+    if (!iso) return null;
+    const [y, m, d] = iso.split("-").map(Number);
+    const dt = new Date(Date.UTC(y, m - 1, d));
+    // Shift to the Thursday of this week; ISO weeks start on Monday.
+    dt.setUTCDate(dt.getUTCDate() + 4 - (dt.getUTCDay() || 7));
+    const yearStart = Date.UTC(dt.getUTCFullYear(), 0, 1);
+    return Math.ceil(((dt - yearStart) / 86400000 + 1) / 7);
+  }
+
   // ---------- Category badge (protein → Fisk/Fågel/Kött/Vegetariskt) ----------
   const ICONS = {
     salad: '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 21h10"/><path d="M12 21a9 9 0 0 0 9-9H3a9 9 0 0 0 9 9Z"/><path d="M11.38 12a2.4 2.4 0 0 1-.4-4.77 2.4 2.4 0 0 1 3.2-2.77 2.4 2.4 0 0 1 3.47-.63 2.4 2.4 0 0 1 3.37 3.37 2.4 2.4 0 0 1-1.1 3.7 2.51 2.51 0 0 1 .03 1.1"/><path d="m13 12 4-4"/><path d="M10.9 7.25A3.99 3.99 0 0 0 4 10c0 .73.2 1.41.54 2"/></svg>',
@@ -164,7 +175,8 @@
     if (!wrap) return;
     let html = `<button class='menu-week-button${app.viewWeek === "all" ? " is-active" : ""}' data-week='all'><span class='menu-week-button-number'>Alla</span></button>`;
     for (let w = 0; w < D.WEEKS; w++) {
-      html += `<button class='menu-week-button${app.viewWeek === w ? " is-active" : ""}' data-week='${w}'><span class='menu-week-button-number'>${w + 1}</span></button>`;
+      const iso = app.plan ? isoWeek(app.plan[w][0].date) : null;
+      html += `<button class='menu-week-button${app.viewWeek === w ? " is-active" : ""}' data-week='${w}'><span class='menu-week-button-number'>${iso != null ? iso : w + 1}</span></button>`;
     }
     wrap.innerHTML = html;
     wrap.querySelectorAll(".menu-week-button").forEach((btn) => {
@@ -202,8 +214,9 @@
       if (weeks.length > 1) {
         const first = app.plan[w][0];
         const firstDate = first ? formatDateSV(first.date) : "";
+        const iso = first ? isoWeek(first.date) : null;
         html += `<div class='week-header'>` +
-          `<h3 class='week-header-title'>Vecka ${w + 1}</h3>` +
+          `<h3 class='week-header-title'>Vecka ${iso != null ? iso : w + 1}</h3>` +
           (firstDate ? `<span class='week-header-date'>från ${firstDate}</span>` : "") +
           `</div>`;
       }
@@ -260,7 +273,8 @@
     const w = +td.dataset.w, d = +td.dataset.d;
     const cands = P.alternatives(w, d, app.state, app.criteria, app.mined);
     const current = app.plan[w][d].meal;
-    $("popover-title").textContent = `${DAY_SV[d]} · Vecka ${w + 1}`;
+    const iso = isoWeek(app.plan[w][d].date);
+    $("popover-title").textContent = `${DAY_SV[d]} · Vecka ${iso != null ? iso : w + 1}`;
     const list = $("popover-list");
     list.innerHTML = "";
     if (!cands.length) {
@@ -344,7 +358,11 @@
   // ---------- Download plan ----------
   $("btn-download-plan").addEventListener("click", () => {
     if (!app.plan) { alert("Generera en plan först."); return; }
-    IO.downloadWorkbook(IO.exportPlan(app.plan, app.criteria), "skolmat-plan-8v.xlsx");
+    const start = app.plan[0][0].date || $("c-start").value || "";
+    const firstISO = isoWeek(app.plan[0][0].date);
+    const lastISO = isoWeek(app.plan[app.plan.length - 1][0].date);
+    const name = `skolmat-plan-v${firstISO ?? 1}-v${lastISO ?? app.plan.length}${start ? `-${start}` : ""}.xlsx`;
+    IO.downloadWorkbook(IO.exportPlan(app.plan, app.criteria), name);
   });
 
   // ---------- Download data templates ----------
