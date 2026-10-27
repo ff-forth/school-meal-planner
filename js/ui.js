@@ -413,14 +413,67 @@
     }
     empty.classList.add("hidden");
     cards.classList.remove("hidden");
-    // "all" renders every week stacked with a header (compact: tags only);
-    // a number renders just that week (full: name + chips).
-    const all = app.viewWeek === "all";
-    const weeks = all ? Array.from({ length: D.WEEKS }, (_, i) => i) : [app.viewWeek];
-    renderWeekCards(weeks, all);
+    // "all" renders the whole plan as a 5×8 table (tags only); a number
+    // renders just that week (full: name + chips).
+    if (app.viewWeek === "all") {
+      renderPlanTable();
+    } else {
+      renderWeekCards([app.viewWeek], false);
+    }
   }
 
   // ---------- Skolmat day cards (one or many weeks) ----------
+  // Compact (Alla) cell: chips only + hover tooltip (name + component summary).
+  function compactCell(w, d, counts) {
+    const esc = (s) => String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+    const slot = app.plan[w][d];
+    const meal = slot && slot.meal;
+    if (!meal) return `<td class='plan-table-cell' data-w='${w}' data-d='${d}'><span class='day-empty'>—</span></td>`;
+    const cat = categoryOf(meal);
+    const starch = starchOf(meal);
+    const soup = soupOf(meal);
+    const chips = [];
+    if (cat) chips.push(chipHTML(cat.icon, cat.label, cat.cls));
+    if (starch) chips.push(chipHTML(starch.icon, starch.label, starch.cls));
+    if (soup) chips.push(chipHTML(soup.icon, soup.label, soup.cls));
+    if (meal.components.theme) chips.push(chipHTML(null, meal.components.theme, "badge-info"));
+    const wv = meal.wasteGPerEater != null ? meal.wasteGPerEater : meal.wasteEstimate;
+    if (wv != null) {
+      const est = meal.wasteGPerEater == null;
+      const cls = wv <= 30 ? "low" : wv <= 55 ? "mid" : "high";
+      chips.push(`<span class="waste-chip ${cls}${est ? " est" : ""}">${wv} g${est ? "*" : ""}</span>`);
+    }
+    const summary = mealSummary(meal, counts);
+    const tip = esc(meal.name) + (summary ? `<br>${esc(summary)}` : "");
+    return `<td class='plan-table-cell' data-w='${w}' data-d='${d}' title='${tip}'>` +
+      `<div class='plan-table-chips'>${chips.join("")}</div>` +
+      `</td>`;
+  }
+
+  // "Alla" overview as a table: 5 weekday rows × 8 week columns, tags only.
+  function renderPlanTable() {
+    const counts = planCategoryCounts();
+    let html = `<table class='plan-table'>` +
+      `<thead><tr><th class='plan-table-corner'></th>`;
+    for (let w = 0; w < D.WEEKS; w++) {
+      const first = app.plan[w][0];
+      const iso = first ? isoWeek(first.date) : null;
+      html += `<th class='plan-table-week'>V${iso != null ? iso : w + 1}</th>`;
+    }
+    html += `</tr></thead><tbody>`;
+    for (let d = 0; d < D.DAYS.length; d++) {
+      html += `<tr><th class='plan-table-day'>${DAY_SV[d]}</th>`;
+      for (let w = 0; w < D.WEEKS; w++) html += compactCell(w, d, counts);
+      html += `</tr>`;
+    }
+    html += `</tbody></table>`;
+    const wrap = $("week-cards");
+    wrap.innerHTML = html;
+    wrap.querySelectorAll(".plan-table-cell").forEach((el) => {
+      el.addEventListener("click", (e) => { e.stopPropagation(); openPopover(el, e); });
+    });
+  }
+
   // compact: the "Alla" overview — show only the tag chips (no meal name);
   // hovering a day reveals the name + a component-count summary.
   function renderWeekCards(weeks, compact) {
