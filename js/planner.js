@@ -630,6 +630,7 @@
     parseCriteria,
     generate,
     alternatives,
+    getCandidates,
     evaluatePlan,
     dayIndexOf,
     parseComponentRules,

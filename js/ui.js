@@ -732,6 +732,9 @@
   function renderPlan() {
     const empty = $("grid-empty"), cards = $("week-cards");
     const search = $("pool-search");
+    // Changing the view (tab, week) closes the swap panel — it's tied to a
+    // specific day slot and would point at the wrong slot otherwise.
+    if (app.swap) closeSwapPanel();
     // The Pool tab is a view, not a week: it lists every meal in the pool and
     // works even when no plan is loaded yet.
     if (app.viewWeek === "pool") {
@@ -1058,11 +1061,17 @@
     }
     wrap.innerHTML = html;
     wrap.querySelectorAll(".menu-editor-compact-row").forEach((el) => {
-      el.addEventListener("click", (e) => { e.stopPropagation(); openPopover(el, e); });
+      el.addEventListener("click", (e) => {
+        e.stopPropagation();
+        // Single-week view: open the side-by-side swap panel instead of a
+        // popover. (The compact "Alla" rows use the popover via renderPlanTable.)
+        if (!compact) openSwapPanel(+el.dataset.w, +el.dataset.d);
+        else openPopover(el, e);
+      });
     });
   }
 
-  // ---------- Popover ----------
+  // ---------- Popover (used by the "Alla" table view) ----------
   const pop = $("popover");
   function openPopover(td, e) {
     const w = +td.dataset.w, d = +td.dataset.d;
@@ -1117,6 +1126,136 @@
     if (!pop.contains(e.target) && !e.target.closest(".cell-card") && !e.target.closest(".menu-editor-compact-row"))
       pop.classList.add("hidden");
   });
+
+  // ---------- Swap panel (side-by-side meal picker) ----------
+  // Replaces the old popover. Clicking a day in a single-week view opens a
+  // panel next to the week that lists every eligible candidate, ranked by how
+  // well it matches the current meal's component tags. A tag filter lets the
+  // user re-prioritize by a chosen component (protein / starch / sauce / prep).
+  const SWAP_DIMS = [
+    { key: "protein", label: "Protein" },
+    { key: "starch", label: "Kolhydrat" },
+    { key: "sauce", label: "Sås" },
+    { key: "prep", label: "Tillagning" },
+  ];
+  const SWAP_W = 0.5, SWAP_P = 0.3, SWAP_S = 0.2;
+
+  function openSwapPanel(w, d) {
+    if (!app.plan || !app.plan[w] || !app.plan[w][d]) return;
+    const slot = app.plan[w][d];
+    const current = slot.meal;
+    const iso = isoWeek(slot.date);
+    const panel = $("swap-panel");
+    app.swap = { w, d, tag: "similar", q: "" };
+    $("swap-panel-title").textContent = `${DAY_SV[d]} · Vecka ${iso != null ? iso : w + 1}`;
+    const s = $("swap-search");
+    if (s) s.value = "";
+    renderSwapTags();
+    panel.classList.remove("hidden");
+    renderSwapList();
+  }
+  function closeSwapPanel() {
+    app.swap = null;
+    const panel = $("swap-panel");
+    if (panel) panel.classList.add("hidden");
+  }
+  function renderSwapTags() {
+    const wrap = $("swap-tags");
+    if (!wrap || !app.swap) return;
+    const active = app.swap.tag;
+    const btn = (key, label) =>
+      `<button class='swap-tag${active === key ? " is-active" : ""}' data-tag='${key}'>${label}</button>`;
+    wrap.innerHTML =
+      btn("similar", "Liknande") +
+      SWAP_DIMS.map((dim) => btn(dim.key, dim.label)).join("");
+    wrap.querySelectorAll(".swap-tag").forEach((b) => {
+      b.addEventListener("click", () => { app.swap.tag = b.dataset.tag; renderSwapTags(); renderSwapList(); });
+    });
+  }
+  function renderSwapList() {
+    const list = $("swap-list");
+    if (!list || !app.swap) return;
+    const { w, d, tag, q } = app.swap;
+    const slot = app.plan[w][d];
+    const current = slot.meal;
+    const esc = (s) => String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+    const cands = P.getCandidates(w, d, app.state, app.criteria, app.mined);
+    const norm = (s) => String(s || "").trim().toLowerCase();
+    const curComps = current ? current.components : {};
+    const dimKey = SWAP_DIMS.find((x) => x.key === tag);
+    const curDimVal = dimKey ? norm(curComps[dimKey.key]) : "";
+    const matches = (m) => {
+      if (!q) return true;
+      const hay = (m.name + " " + (m.vegName || "")).toLowerCase();
+      return hay.includes(q);
+    };
+    const ranked = cands
+      .filter((c) => matches(c.meal))
+      .map((c) => {
+        let sim = 0;
+        for (const dim of SWAP_DIMS) {
+          const a = norm(curComps[dim.key]), b = norm(c.meal.components && c.meal.components[dim.key]);
+          if (a && b && a === b) sim++;
+        }
+        let tagMatch = null;
+        if (dimKey) {
+          const b = norm(c.meal.components && c.meal.components[dimKey.key]);
+          tagMatch = curDimVal ? (b === curDimVal) : (b === "");
+        }
+        const rank = SWAP_W * c.score + SWAP_P * sim + (SWAP_S * (tagMatch ? 1 : 0));
+        return { ...c, sim, tagMatch, rank };
+      })
+      .sort((a, b) => b.rank - a.rank);
+
+    if (!ranked.length) {
+      list.innerHTML = "<p class='helper-text' style='padding:0.5rem'>Inga måltider matchar här.</p>";
+      return;
+    }
+    const items = ranked.map((c) => {
+      const m = c.meal;
+      const isCur = current && m.id === current.id;
+      const chips = [];
+      const cat = categoryOf(m); if (cat) chips.push(chipHTML(cat.icon, cat.label, cat.cls));
+      const st = starchOf(m); if (st) chips.push(chipHTML(st.icon, st.label, st.cls));
+      const sp = soupOf(m); if (sp) chips.push(chipHTML(sp.icon, sp.label, sp.cls));
+      if (m.components && m.components.theme) chips.push(chipHTML(null, m.components.theme, "badge-info"));
+      const wv = m.wasteGPerEater != null ? m.wasteGPerEater : m.wasteEstimate;
+      const est = m.wasteGPerEater == null;
+      const waste = wv != null ? `<span class="swap-item-waste${est ? " est" : ""}" title="${est ? "Uppskattat" : "Mätt"}">${wv} g${est ? "*" : ""}</span>` : "";
+      const cc = m.components || {};
+      const comps = [cc.protein, cc.starch, cc.sauce, cc.prep].map((s) => String(s || "").trim()).filter(Boolean).map(esc).join(" · ");
+      const tagFlag = (tag !== "similar" && c.tagMatch) ? `<span class="swap-tag-flag" title="Matchar taggen">✓</span>` : "";
+      return `<div class='swap-item${isCur ? " current" : ""}' data-id='${esc(m.id)}'>` +
+        `<span class='swap-item-main'>` +
+          `<span class='swap-item-name'>${esc(m.name)}</span>${tagFlag}` +
+          (chips.length ? `<span class='swap-item-chips'>${chips.join("")}</span>` : "") +
+          waste +
+        `</span>` +
+        (comps ? `<span class='swap-item-comps'>${comps}</span>` : "") +
+        `</div>`;
+    }).join("");
+    list.innerHTML = items;
+    list.querySelectorAll(".swap-item").forEach((el) => {
+      el.addEventListener("click", () => {
+        const id = el.dataset.id;
+        const cand = cands.find((c) => c.meal.id === id);
+        if (!cand) return;
+        app.plan[w][d].meal = cand.meal;
+        rebuildState();
+        app.eval = P.evaluatePlan(app.plan, app.criteria);
+        renderStatus();
+        renderWeekCards([w], false); // refresh the week, keep the panel open
+        renderSwapList();            // re-rank with the new current meal
+      });
+    });
+  }
+  (function setupSwapPanel() {
+    const close = $("swap-panel-close");
+    if (close) close.addEventListener("click", closeSwapPanel);
+    const search = $("swap-search");
+    if (search) search.addEventListener("input", () => { if (app.swap) { app.swap.q = search.value.trim().toLowerCase(); renderSwapList(); } });
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape" && app.swap) closeSwapPanel(); });
+  })();
 
   // Swap the meals of two slots (drag-and-drop in the Alla view).
   function swapMeals(w1, d1, w2, d2) {

@@ -146,10 +146,23 @@
           <p class="plan-hint">Alla veckor visas som dagkort. Klicka på en veckoflik för att zooma in, eller klicka på en dag för att se rankade alternativ &amp; byta.</p>
         </div>
         <div class="plan-body">
-          <div id="grid-empty" class="plan-empty">
-            8-veckorsplanen visas här efter att du genererat en plan.
+          <div class="plan-body-main">
+            <div id="grid-empty" class="plan-empty">
+              8-veckorsplanen visas här efter att du genererat en plan.
+            </div>
+            <div id="week-cards" class="plan-cards hidden"></div>
           </div>
-          <div id="week-cards" class="plan-cards hidden"></div>
+          <aside id="swap-panel" class="swap-panel hidden">
+            <div class="swap-panel-head">
+              <span id="swap-panel-title" class="swap-panel-title"></span>
+              <button id="swap-panel-close" class="swap-panel-close" aria-label="Stäng">×</button>
+            </div>
+            <div class="swap-panel-controls">
+              <input type="search" id="swap-search" class="inp swap-search" placeholder="Sök måltid…" />
+              <div id="swap-tags" class="swap-tags"></div>
+            </div>
+            <div id="swap-list" class="swap-list"></div>
+          </aside>
         </div>
       </section>
     </div>
