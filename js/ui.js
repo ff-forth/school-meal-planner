@@ -286,6 +286,8 @@
   }
 
   // Rebuild the candidate pool from a saved pool file's records and show it.
+  // A pool file is a complete snapshot (no dates), so it replaces the pool
+  // accumulator; the dated menu (xlsx/JSON) is untouched and still merges in.
   // Components are re-derived from each meal name; measured waste is kept, and
   // the component-based estimate fills in where it is missing.
   function loadPoolFromRows(rows, label) {
@@ -295,48 +297,75 @@
       status.style.color = "var(--danger)";
       return;
     }
-    app.dayRecords = rows.map((r) => ({
+    if (!app.poolRecords) app.poolRecords = [];
+    app.poolRecords = rows.map((r) => ({
       name: r.name, vegName: r.vegName || "", wasteGPerEater: r.wasteGPerEater != null ? r.wasteGPerEater : null,
     }));
-    app.pool = D.buildMealPool(app.dayRecords);
-    applyEstimates();
+    rebuildPool();
     $("drop-real").classList.add("ok");
     renderSkolmatFileList([]);
     markFileStatus("pool", true, `${label} (${app.pool.length} måltider)`);
     status.textContent = `✓ Pool laddad (${label}) · ${app.pool.length} unika måltider`;
     status.style.color = "var(--primary)";
+  }
+
+  // Comparator for sorting day records by ISO date.
+  const byDateCmp = (a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
+
+  // Merge a batch of day records into the persistent menu, deduped by date
+  // (a later record wins on a date that appears in two sources).
+  function mergeMenuDays(records) {
+    const byDate = new Map((app.menuDays || []).map((d) => [d.date, d]));
+    for (const r of records) byDate.set(r.date, r);
+    app.menuDays = Array.from(byDate.values()).sort(byDateCmp);
+  }
+
+  // Rebuild the pool from the accumulated data (menu + waste + eaters) and
+  // refresh estimates. Called after any data source is added or changed.
+  // A loaded pool file (no dates) lives in app.poolRecords and is folded in
+  // alongside the dated menu so the two coexist.
+  function rebuildPool() {
+    const joined = RI.join(app.menuDays || [], app.wasteKg || {}, app.eaters || {});
+    const records = joined.records.concat(app.poolRecords || []);
+    app.dayRecords = records;
+    app.pool = records.length ? D.buildMealPool(records) : null;
+    applyEstimates();
     checkReady();
+    return joined;
   }
 
   async function handleRealFiles(files) {
     const status = $("status-real");
-    renderSkolmatFileList([]); // a different source replaces the Skolmat JSON list
-    const loader = RI.createLoader();
+    // Persistent accumulators (created on first use) so data sources MERGE
+    // across imports instead of replacing each other.
+    if (!app.menuDays) app.menuDays = [];
+    if (!app.wasteKg) app.wasteKg = {};
+    if (!app.eaters) app.eaters = {};
+    if (!app.skolmatFiles) app.skolmatFiles = [];
     // Split .json (skolmat.info) files from .xlsx files. JSON files are the
     // bookmarklet's output and are parsed separately; .xlsx files are
-    // classified by name (menu / svinn / portioner / rapport).
+    // classified by name (menu / svinn-report / portioner / rapport).
     const jsonFiles = files.filter((f) => /\.json$/i.test(f.name));
     const xlsxFiles = files.filter((f) => !/\.json$/i.test(f.name));
     for (const f of jsonFiles) {
       try {
         const out = RI.parseSkolmatJSON(await f.text());
         if (!out.records.length) {
+          app.skolmatFiles.push({ name: f.name, ok: false, error: out.error || "inga dagar" });
           markFileStatus("menu", false, `${f.name} — ${out.error || "inga dagar"}`);
         } else {
-          // Merge by date (same rule as the xlsx menu path) so overlapping
-          // files don't double-count a day.
-          const byDate = new Map((loader.menuDays || []).map((d) => [d.date, d]));
-          for (const r of out.records) byDate.set(r.date, r);
-          loader.menuDays = Array.from(byDate.values()).sort((a, b) =>
-            a.date < b.date ? -1 : a.date > b.date ? 1 : 0
-          );
-          loader.jsonFacility = out.facilityName || loader.jsonFacility;
+          mergeMenuDays(out.records);
+          app.jsonFacility = out.facilityName || app.jsonFacility;
+          app.skolmatFiles.push({ name: f.name, ok: true, count: out.records.length });
           markFileStatus("menu", true, `${f.name} (${out.records.length} dagar)`);
         }
       } catch (err) {
+        app.skolmatFiles.push({ name: f.name, ok: false, error: err.message });
         markFileStatus("menu", false, `${f.name} — ${err.message}`);
       }
     }
+    renderSkolmatFileList(app.skolmatFiles);
+    const loader = RI.createLoader();
     for (const f of xlsxFiles) {
       const kind = RI.classify(f.name);
       try {
@@ -347,7 +376,7 @@
           continue;
         }
         if (kind === "pool") {
-          // A saved pool rebuilds the candidate meals on its own.
+          // A saved pool is a complete snapshot that replaces the data.
           loadPoolFromRows(RI.readPool(IO.readWorkbook(buf)), f.name);
           continue;
         }
@@ -357,15 +386,20 @@
         markFileStatus(kind, false, `${f.name} — ${err.message}`);
       }
     }
-    const out = RI.finish(loader);
-    // Per-school waste record (rapport): build the lookup even if no menu was
-    // dropped this time, so it can fill in waste once a menu exists.
-    if (out.rapport && out.rapport.length) {
-      app.wasteLookup = global.WasteLookup.build(out.rapport, app.pool || []);
+    // Merge this batch's xlsx contributions into the persistent accumulators.
+    if (loader.menuDays.length) mergeMenuDays(loader.menuDays);
+    for (const k of Object.keys(loader.wasteKg)) app.wasteKg[k] = (app.wasteKg[k] || 0) + loader.wasteKg[k];
+    for (const k of Object.keys(loader.eaters)) app.eaters[k] = (app.eaters[k] || 0) + loader.eaters[k];
+    const joined = rebuildPool();
+    // Per-school waste record (rapport): build the lookup against the current
+    // pool, then re-apply so its measured waste fills in.
+    if (loader.rapport && loader.rapport.length) {
+      app.wasteLookup = global.WasteLookup.build(loader.rapport, app.pool || []);
       app.targetSchool = "";
       renderSchoolSelect();
+      applyEstimates();
     }
-    if (!out.records.length) {
+    if (!app.pool) {
       if (app.wasteLookup && app.wasteLookup.count) {
         status.textContent = `✓ svinn-per-skola: ${app.wasteLookup.count} mätta måltider från ${app.wasteLookup.schoolNames.length} skolor laddade – lägg till en matsedel för att fylla i.`;
         status.style.color = "var(--primary)";
@@ -373,23 +407,17 @@
         status.textContent = "Inga användbara menyrader. Kontrollera att menyn var med.";
         status.style.color = "var(--danger)";
       }
-      app.dayRecords = null; app.pool = null;
-      checkReady();
       return;
     }
-    app.dayRecords = out.records;
-    app.pool = D.buildMealPool(out.records);
-    applyEstimates();
-    const who = loader.jsonFacility ? ` · ${loader.jsonFacility}` : "";
-    let line = `✓ ${out.total} dagar${who} · ${app.pool.length} unika måltider`;
-    if (out.stats.min != null) {
-      line += ` · svinn ${out.stats.min}–${out.stats.max} g/ätande (medelvärde ${out.stats.mean})`;
+    const who = app.jsonFacility ? ` · ${app.jsonFacility}` : "";
+    let line = `✓ ${joined.total} dagar${who} · ${app.pool.length} unika måltider`;
+    if (joined.stats.min != null) {
+      line += ` · svinn ${joined.stats.min}–${joined.stats.max} g/ätande (medelvärde ${joined.stats.mean})`;
     }
     if (app.wasteFilled) line += ` · ${app.wasteFilled} fyllde ur svinn från rapport`;
     status.textContent = line;
     status.style.color = "var(--primary)";
     $("drop-real").classList.add("ok");
-    checkReady();
   }
 
   function setupRealDropzone() {
@@ -428,41 +456,53 @@
     }).join("");
   }
 
+  // Import one or more skolmat.info JSON files. Their days MERGE into the
+  // persistent menu (by date) so they can coexist with a historical xlsx menu
+  // and other weeks; a later file wins on a date that appears in two.
   async function handleSkolmatFiles(files) {
     const status = $("status-real");
-    const byDate = new Map();
+    if (!app.menuDays) app.menuDays = [];
+    if (!app.wasteKg) app.wasteKg = {};
+    if (!app.eaters) app.eaters = {};
+    if (!app.skolmatFiles) app.skolmatFiles = [];
     let facilityName = null;
-    const entries = [];
+    const errs = [];
     for (const f of files) {
       try {
         const out = RI.parseSkolmatJSON(await f.text());
-        if (!out.records.length) { entries.push({ name: f.name, ok: false, error: out.error || "inga dagar" }); continue; }
-        for (const r of out.records) byDate.set(r.date, r);
+        if (!out.records.length) {
+          app.skolmatFiles = app.skolmatFiles.filter((e) => e.name !== f.name);
+          app.skolmatFiles.push({ name: f.name, ok: false, error: out.error || "inga dagar" });
+          markFileStatus("menu", false, `${f.name} — ${out.error || "inga dagar"}`);
+          errs.push(`${f.name}: ${out.error || "inga dagar"}`);
+          continue;
+        }
+        mergeMenuDays(out.records);
         if (out.facilityName) facilityName = out.facilityName;
-        entries.push({ name: f.name, ok: true, count: out.records.length });
-      } catch (err) { entries.push({ name: f.name, ok: false, error: err.message }); }
+        app.skolmatFiles = app.skolmatFiles.filter((e) => e.name !== f.name);
+        app.skolmatFiles.push({ name: f.name, ok: true, count: out.records.length });
+        markFileStatus("menu", true, `${f.name} (${out.records.length} dagar)`);
+      } catch (err) {
+        app.skolmatFiles = app.skolmatFiles.filter((e) => e.name !== f.name);
+        app.skolmatFiles.push({ name: f.name, ok: false, error: err.message });
+        markFileStatus("menu", false, `${f.name} — ${err.message}`);
+        errs.push(`${f.name}: ${err.message}`);
+      }
     }
-    renderSkolmatFileList(entries);
-    const records = Array.from(byDate.values()).sort((a, b) =>
-      a.date < b.date ? -1 : a.date > b.date ? 1 : 0
-    );
-    const errs = entries.filter((e) => !e.ok).length;
-    if (!records.length) {
-      status.textContent = "⚠ " + (entries.map((e) => `${e.name}: ${e.error || "inga dagar"}`).join(" · ") || "Ingen matsedel hittades i filen.");
+    renderSkolmatFileList(app.skolmatFiles);
+    const joined = rebuildPool();
+    if (!joined.records.length) {
+      status.textContent = "⚠ " + (errs.join(" · ") || "Ingen matsedel hittades i filen.");
       status.style.color = "var(--danger)";
       return;
     }
-    app.dayRecords = records;
-    app.pool = D.buildMealPool(records);
-    applyEstimates();
-    const who = facilityName ? ` · ${facilityName}` : "";
+    if (facilityName) app.jsonFacility = facilityName;
+    const who = app.jsonFacility ? ` · ${app.jsonFacility}` : "";
     const multi = files.length > 1 ? ` (${files.length} filer)` : "";
-    const errNote = errs ? ` · ${errs} fil(er) misslyckades` : "";
-    status.textContent = `✓ skolmat.info: ${records.length} dagar${who} · ${app.pool.length} unika måltider${multi}${errNote}`;
+    const errNote = errs.length ? ` · ${errs.length} fil(er) misslyckades` : "";
+    status.textContent = `✓ skolmat.info: ${joined.total} dagar${who} · ${app.pool.length} unika måltider${multi}${errNote}`;
     status.style.color = "var(--primary)";
     $("drop-real").classList.add("ok");
-    markFileStatus("menu", true, `skolmat.info (${records.length} dagar)`);
-    checkReady();
   }
 
   function setupSkolmatImport() {
