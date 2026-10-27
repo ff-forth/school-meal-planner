@@ -166,10 +166,57 @@
     return wb;
   }
 
+  // Export the full candidate pool (every unique meal) as a resumable pool file.
+  // Columns mirror the processed menu so the app can re-import it: one row per
+  // meal with its components and waste. "Svinn/ätande (estimerat)" is the
+  // component-based estimate the app uses when no measured value exists.
+  function exportPool(pool) {
+    const D2 = global.MealData;
+    const header = [
+      "Måltid", "Vegetariskt", "Protein", "Kolhydrat", "Grönäsar",
+      "Sås", "Tillagning", "Svinn/ätande (mätt)", "Svinn/ätande (estimerat)",
+    ];
+    const aoa = [header];
+    const sorted = (pool || []).slice().sort((a, b) => a.name.localeCompare(b.name, "sv"));
+    for (const m of sorted) {
+      const c = m.components || {};
+      aoa.push([
+        m.name,
+        m.vegName || "",
+        c.protein || "",
+        c.starch || "",
+        D2.vegsOf(m) || "",
+        c.sauce || "",
+        c.prep || "",
+        m.wasteGPerEater != null ? m.wasteGPerEater : "",
+        m.wasteEstimate != null ? m.wasteEstimate : "",
+      ]);
+    }
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws["!cols"] = [
+      { wch: 46 }, { wch: 46 }, { wch: 16 }, { wch: 14 }, { wch: 22 },
+      { wch: 14 }, { wch: 14 }, { wch: 18 }, { wch: 20 },
+    ];
+
+    const readme = [
+      ["Skolmat plan — pool (alla måltider)"],
+      [""],
+      ["En rad per unik måltid med komponenter (Protein/Kolhydrat/Grönäsar/Sås/Tillagning)"],
+      ["och svinn per ätande (g). 'Svinn/ätande (estimerat)' fylls i av appen när inget"],
+      ["mätt värde finns. Importera denna fil (…skolmat-pool…) för att återställa poolen"],
+      ["utan att ladda hela menyn igen — t.ex. för att återuppta en sparad plan."],
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Pool");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(readme), "README");
+    return wb;
+  }
+
   global.XlsxIO = {
     readArrayBuffer,
     downloadWorkbook,
     exportPlan,
+    exportPool,
     templates,
     exportComponents,
   };

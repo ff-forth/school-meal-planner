@@ -19,6 +19,7 @@
       </div>
       <div class="header-right">
         <button id="btn-back" class="btn btn-ghost hidden">← Ändra inställningar</button>
+        <button id="btn-download-pool" class="btn btn-ghost hidden">⬇ Ladda ner pool (.xlsx)</button>
         <button id="btn-download-plan" class="btn btn-primary hidden">⬇ Ladda ner plan (.xlsx)</button>
       </div>
     </div>
@@ -39,15 +40,11 @@
           <ul class="file-status" id="real-file-status">
             <li data-kind="menu">○ Meny (…Matsedel…)</li>
             <li data-kind="svinnreport">○ Svinn report (…svinn-report…)</li>
+            <li data-kind="pool">○ Pool (…skolmat-pool…)</li>
           </ul>
           <div class="school-select hidden" id="school-select-wrap">
             <label class="helper-text" for="school-select">Föredra svinn från skola:</label>
             <select id="school-select" class="inp"></select>
-          </div>
-          <div class="btn-row">
-            <button id="btn-sample" class="btn btn-ghost">Ladda exempeldata</button>
-            <button id="btn-templates" class="btn btn-ghost">⬇ Mallar (.xlsx)</button>
-            <button id="btn-components" class="btn btn-ghost" disabled>🧩 Komponenter (redigerbar)</button>
           </div>
 
           <h3 class="input-section-title">Plandata</h3>
@@ -55,9 +52,14 @@
             <input type="file" id="file-plan" accept=".xlsx,.xls" hidden />
             <button id="btn-plan" class="btn btn-ghost">📂 Importera sparad plan (…skolmat-plan…)</button>
           </div>
+          <div class="btn-row">
+            <input type="file" id="file-pool" accept=".xlsx,.xls" hidden />
+            <button id="btn-pool" class="btn btn-ghost">📂 Importera pool (…skolmat-pool…)</button>
+          </div>
           <p class="helper-text">
             Ladda in en tidigare exporterad 8-veckorsplan för att fortsätta arbeta med den.
-            Rätterna matchas mot den laddade menyn så att svinn och komponenter följer med.
+            Poolen (alla måltider med svinn/ätande + komponenter) kan laddas in separat så att
+            planen kan återupptas utan att hela menyn behöver laddas igen.
           </p>
 
           <h3 class="input-section-title">Skolmat (.json)</h3>

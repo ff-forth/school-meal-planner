@@ -95,6 +95,7 @@
     if (n.includes("svinn")) return "waste";
     if (n.includes("portion")) return "portions";
     if (n.includes("skolmat-plan")) return "plan";
+    if (n.includes("skolmat-pool")) return "pool";
     if (n.includes("matsedel") || n.includes("inskrivna") || n.includes("skolmat")) return "menu";
     return null;
   }
@@ -242,6 +243,41 @@
         meal,
         veg: String(r[cVeg] == null ? "" : r[cVeg]).trim(),
         waste: cWaste >= 0 ? parseFloat(r[cWaste]) : NaN,
+      });
+    }
+    return out;
+  }
+
+  // ---- pool file (…skolmat-pool…) ----
+  // One row per unique meal: Måltid | Vegetariskt | Protein | Kolhydrat |
+  // Grönäsar | Sås | Tillagning | Svinn/ätande (mätt) | Svinn/ätande (estimerat).
+  // Rebuilds the candidate pool so a saved plan can be resumed without the full
+  // menu. Waste is measured when present, else the estimate column.
+  function readPool(wb) {
+    let rows = null;
+    for (const name of Object.keys(wb.Sheets)) {
+      const r = sheetRows(wb, name);
+      if (r && findHeaderRow(r, ["maltid", "protein", "svinn"])) { rows = r; break; }
+    }
+    if (!rows) return [];
+    const { row, header } = findHeaderRow(rows, ["maltid", "protein", "svinn"]);
+    const cMeal = colIndex(header, "maltid");
+    const cVeg = colIndex(header, "vegetar");
+    const cMatt = colIndexExact(header, "svinn/atande (matt)");
+    const cEst = colIndexExact(header, "svinn/atande (estimerat)");
+    const out = [];
+    for (let i = row + 1; i < rows.length; i++) {
+      const r = rows[i];
+      if (!r) continue;
+      const meal = String(r[cMeal] == null ? "" : r[cMeal]).trim();
+      if (!meal) continue;
+      const m = cMatt >= 0 ? parseFloat(r[cMatt]) : NaN;
+      const est = cEst >= 0 ? parseFloat(r[cEst]) : NaN;
+      const waste = isFinite(m) ? m : (isFinite(est) ? est : null);
+      out.push({
+        name: meal,
+        vegName: cVeg >= 0 ? String(r[cVeg] == null ? "" : r[cVeg]).trim() : "",
+        wasteGPerEater: waste,
       });
     }
     return out;
@@ -454,6 +490,7 @@
     readPortions,
     readSvinnReport,
     readPlan,
+    readPool,
     readRapport,
     colIndexExact,
     join,

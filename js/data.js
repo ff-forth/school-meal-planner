@@ -24,7 +24,7 @@
     const s = String(name || "").toLowerCase();
     return (
       !s.trim() ||
-      /lov|k[öo]ket v[äe]ljer|klimatvecka|[öo]nskevecka|kl[äe]mdag|tom|---/.test(s)
+      /lov|k[öo]ket v[äe]ljer|klimatvecka|[öo]nskevecka|kl[äe]mdag|\btom\b|---/.test(s)
     );
   }
 

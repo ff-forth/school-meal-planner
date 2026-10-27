@@ -285,6 +285,28 @@
     status.style.color = "var(--primary)";
   }
 
+  // Rebuild the candidate pool from a saved pool file's records and show it.
+  // Components are re-derived from each meal name; measured waste is kept, and
+  // the component-based estimate fills in where it is missing.
+  function loadPoolFromRows(rows, label) {
+    const status = $("status-real");
+    if (!rows.length) {
+      status.textContent = `Ingen pool hittades i ${label}.`;
+      status.style.color = "var(--danger)";
+      return;
+    }
+    app.dayRecords = rows.map((r) => ({
+      name: r.name, vegName: r.vegName || "", wasteGPerEater: r.wasteGPerEater != null ? r.wasteGPerEater : null,
+    }));
+    app.pool = D.buildMealPool(app.dayRecords);
+    applyEstimates();
+    $("drop-real").classList.add("ok");
+    markFileStatus("pool", true, `${label} (${app.pool.length} måltider)`);
+    status.textContent = `✓ Pool laddad (${label}) · ${app.pool.length} unika måltider`;
+    status.style.color = "var(--primary)";
+    checkReady();
+  }
+
   async function handleRealFiles(files) {
     const status = $("status-real");
     const loader = RI.createLoader();
@@ -320,6 +342,11 @@
         if (kind === "plan") {
           // A saved plan is loaded on its own (it isn't part of the menu data).
           loadPlanFromRows(RI.readPlan(IO.readWorkbook(buf)), f.name);
+          continue;
+        }
+        if (kind === "pool") {
+          // A saved pool rebuilds the candidate meals on its own.
+          loadPoolFromRows(RI.readPool(IO.readWorkbook(buf)), f.name);
           continue;
         }
         const res = RI.addFile(loader, f.name, buf);
@@ -382,19 +409,6 @@
     });
   }
 
-  function loadSample() {
-    app.dayRecords = D.loadSampleReal();
-    app.pool = D.buildMealPool(app.dayRecords);
-    applyEstimates();
-    const status = $("status-real");
-    status.textContent = `✓ exempel: ${app.dayRecords.length} dagar · ${app.pool.length} unika måltider`;
-    status.style.color = "var(--primary)";
-    $("drop-real").classList.add("ok");
-    markFileStatus("menu", true, "exempelmatsedel");
-    markFileStatus("waste", true, "exempelsvinn");
-    markFileStatus("portions", true, "exempelportioner");
-    checkReady();
-  }
 
   // ---------- Import a skolmat.info JSON file ----------
   async function handleSkolmatFile(file) {
@@ -452,6 +466,25 @@
     });
   }
 
+  function setupPoolImport() {
+    const btn = $("btn-pool"), input = $("file-pool");
+    if (!btn || !input) return;
+    btn.addEventListener("click", () => input.click());
+    input.addEventListener("change", async () => {
+      const f = input.files && input.files[0];
+      input.value = "";
+      if (!f) return;
+      try {
+        const buf = await IO.readArrayBuffer(f);
+        loadPoolFromRows(RI.readPool(IO.readWorkbook(buf)), f.name);
+      } catch (err) {
+        const status = $("status-real");
+        status.textContent = `Kunde inte läsa poolen: ${err.message}`;
+        status.style.color = "var(--danger)";
+      }
+    });
+  }
+
   // Attach waste to meals that lack a measured value. First fill from the
   // per-school lookup (real measured waste, matched by combination); any meal
   // still missing a value gets the component-combination estimate. Meals filled
@@ -483,8 +516,6 @@
   function checkReady() {
     const ready = app.dayRecords && app.pool && app.pool.length;
     $("btn-generate").disabled = !ready;
-    const compBtn = $("btn-components");
-    if (compBtn) compBtn.disabled = !ready;
   }
 
   // ---------- Page navigation (setup <-> plan) ----------
@@ -493,6 +524,8 @@
     $("page-plan").classList.remove("hidden");
     $("btn-back").classList.remove("hidden");
     $("btn-download-plan").classList.remove("hidden");
+    const poolBtn = $("btn-download-pool");
+    if (poolBtn) poolBtn.classList.remove("hidden");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
   function showSetupPage() {
@@ -500,6 +533,8 @@
     $("page-setup").classList.remove("hidden");
     $("btn-back").classList.add("hidden");
     $("btn-download-plan").classList.add("hidden");
+    const poolBtn = $("btn-download-pool");
+    if (poolBtn) poolBtn.classList.add("hidden");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
   $("btn-back").addEventListener("click", showSetupPage);
@@ -921,23 +956,18 @@
     IO.downloadWorkbook(IO.exportPlan(app.plan, app.criteria), name);
   });
 
-  // ---------- Download data templates ----------
-  $("btn-templates").addEventListener("click", () => {
-    IO.downloadWorkbook(IO.templates(), "skolmat-mallar.xlsx");
-  });
-
-  // ---------- Download editable component sheet ----------
-  $("btn-components").addEventListener("click", () => {
+  // ---------- Download pool (all meals) ----------
+  $("btn-download-pool").addEventListener("click", () => {
     if (!app.pool) { alert("Importera data först."); return; }
     applyEstimates();
-    IO.downloadWorkbook(IO.exportComponents(app.pool), "skolmat-komponenter.xlsx");
+    IO.downloadWorkbook(IO.exportPool(app.pool), "skolmat-pool.xlsx");
   });
 
   // ---------- Init ----------
   setupRealDropzone();
   setupSkolmatImport();
   setupPlanImport();
-  $("btn-sample").addEventListener("click", loadSample);
+  setupPoolImport();
   // Prefer a school's waste: re-fill the pool and re-render if a plan exists.
   $("school-select").addEventListener("change", (e) => {
     app.targetSchool = e.target.value;
