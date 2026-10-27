@@ -301,6 +301,7 @@
     app.pool = D.buildMealPool(app.dayRecords);
     applyEstimates();
     $("drop-real").classList.add("ok");
+    renderSkolmatFileList([]);
     markFileStatus("pool", true, `${label} (${app.pool.length} måltider)`);
     status.textContent = `✓ Pool laddad (${label}) · ${app.pool.length} unika måltider`;
     status.style.color = "var(--primary)";
@@ -309,6 +310,7 @@
 
   async function handleRealFiles(files) {
     const status = $("status-real");
+    renderSkolmatFileList([]); // a different source replaces the Skolmat JSON list
     const loader = RI.createLoader();
     // Split .json (skolmat.info) files from .xlsx files. JSON files are the
     // bookmarklet's output and are parsed separately; .xlsx files are
@@ -414,24 +416,39 @@
   // Accepts one or more JSON files (one per week). Records are merged by date
   // (same rule as the dropzone) so several weeks combine into one pool; a later
   // file wins on a date that appears in two.
+  // Show which .json files are currently imported (name + day count, or the
+  // error for a file that failed to parse).
+  function renderSkolmatFileList(entries) {
+    const ul = $("skolmat-file-list");
+    if (!ul) return;
+    ul.innerHTML = entries.map((e) => {
+      const mark = e.ok ? "✓" : "○";
+      const detail = e.ok ? `${e.count} dagar` : (e.error || "inga dagar");
+      return `<li style="color:${e.ok ? "var(--primary)" : "var(--danger)"}">${mark} ${e.name} — ${detail}</li>`;
+    }).join("");
+  }
+
   async function handleSkolmatFiles(files) {
     const status = $("status-real");
     const byDate = new Map();
     let facilityName = null;
-    const errors = [];
+    const entries = [];
     for (const f of files) {
       try {
         const out = RI.parseSkolmatJSON(await f.text());
-        if (!out.records.length) { errors.push(`${f.name}: ${out.error || "inga dagar"}`); continue; }
+        if (!out.records.length) { entries.push({ name: f.name, ok: false, error: out.error || "inga dagar" }); continue; }
         for (const r of out.records) byDate.set(r.date, r);
         if (out.facilityName) facilityName = out.facilityName;
-      } catch (err) { errors.push(`${f.name}: ${err.message}`); }
+        entries.push({ name: f.name, ok: true, count: out.records.length });
+      } catch (err) { entries.push({ name: f.name, ok: false, error: err.message }); }
     }
+    renderSkolmatFileList(entries);
     const records = Array.from(byDate.values()).sort((a, b) =>
       a.date < b.date ? -1 : a.date > b.date ? 1 : 0
     );
+    const errs = entries.filter((e) => !e.ok).length;
     if (!records.length) {
-      status.textContent = "⚠ " + (errors.join(" · ") || "Ingen matsedel hittades i filen.");
+      status.textContent = "⚠ " + (entries.map((e) => `${e.name}: ${e.error || "inga dagar"}`).join(" · ") || "Ingen matsedel hittades i filen.");
       status.style.color = "var(--danger)";
       return;
     }
@@ -440,8 +457,8 @@
     applyEstimates();
     const who = facilityName ? ` · ${facilityName}` : "";
     const multi = files.length > 1 ? ` (${files.length} filer)` : "";
-    const errs = errors.length ? ` · ${errors.length} fil(er) misslyckades` : "";
-    status.textContent = `✓ skolmat.info: ${records.length} dagar${who} · ${app.pool.length} unika måltider${multi}${errs}`;
+    const errNote = errs ? ` · ${errs} fil(er) misslyckades` : "";
+    status.textContent = `✓ skolmat.info: ${records.length} dagar${who} · ${app.pool.length} unika måltider${multi}${errNote}`;
     status.style.color = "var(--primary)";
     $("drop-real").classList.add("ok");
     markFileStatus("menu", true, `skolmat.info (${records.length} dagar)`);
