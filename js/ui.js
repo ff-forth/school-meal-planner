@@ -107,6 +107,16 @@
     return counts;
   }
 
+  // The component labels a meal belongs to (same set as planCategoryCounts).
+  function cellCompLabels(meal) {
+    const labels = [];
+    const cat = categoryOf(meal); if (cat) labels.push(cat.label);
+    const st = starchOf(meal); if (st) labels.push(st.label);
+    const sp = soupOf(meal); if (sp) labels.push(sp.label);
+    if (meal.components && meal.components.theme) labels.push(meal.components.theme);
+    return labels;
+  }
+
   // "Fläsk 5×, Potatis 12×, Soppa 8×" for the components a meal belongs to.
   function mealSummary(meal, counts) {
     const parts = [];
@@ -443,7 +453,8 @@
       const cls = wv <= 30 ? "low" : wv <= 55 ? "mid" : "high";
       chips.push(`<span class="waste-chip ${cls}${est ? " est" : ""}">${wv} g${est ? "*" : ""}</span>`);
     }
-    return `<td class='plan-table-cell' data-w='${w}' data-d='${d}' data-name='${esc(meal.name)}'>` +
+    const comps = cellCompLabels(meal).map(esc).join("|");
+    return `<td class='plan-table-cell' data-w='${w}' data-d='${d}' data-name='${esc(meal.name)}' data-comps='${comps}'>` +
       `<div class='plan-table-chips'>${chips.join("")}</div>` +
       `</td>`;
   }
@@ -454,8 +465,8 @@
     const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
     if (!entries.length) return "";
     const items = entries.map(([label, n]) =>
-      `<span class="plan-table-stat"><span class="plan-table-stat-label">${esc(label)}</span>` +
-      `<span class="plan-table-stat-count"><b>${n}</b> ggr</span></span>`
+      `<button type="button" class="plan-table-stat" data-comp="${esc(label)}"><span class="plan-table-stat-label">${esc(label)}</span>` +
+      `<span class="plan-table-stat-count"><b>${n}</b> ggr</span></button>`
     ).join("");
     return `<div class="plan-table-stats">` +
       `<div class="plan-table-stats-title">Komponenter · 8 veckor</div>` +
@@ -484,6 +495,21 @@
     wrap.innerHTML = html;
     wrap.querySelectorAll(".plan-table-cell").forEach((el) => {
       el.addEventListener("click", (e) => { e.stopPropagation(); openPopover(el, e); });
+    });
+    // Click a component stat to highlight every cell that contains it.
+    wrap.querySelectorAll(".plan-table-stat").forEach((el) => {
+      el.addEventListener("click", () => {
+        const comp = el.dataset.comp;
+        const active = el.classList.contains("active");
+        wrap.querySelectorAll(".plan-table-stat").forEach((s) => s.classList.remove("active"));
+        wrap.querySelectorAll(".plan-table-cell").forEach((c) => c.classList.remove("hl"));
+        if (active) return;
+        el.classList.add("active");
+        wrap.querySelectorAll(".plan-table-cell").forEach((c) => {
+          const comps = (c.dataset.comps || "").split("|");
+          if (comps.includes(comp)) c.classList.add("hl");
+        });
+      });
     });
     // Hover tooltip (styled, so the name + summary stack on separate lines).
     const tip = $("cell-tooltip");

@@ -318,10 +318,16 @@ code { background: var(--bg-body); border: 1px solid var(--border-light); border
   display: inline-flex; align-items: center; gap: 0.35rem;
   background: var(--bg-body); border: 1px solid var(--border-light);
   border-radius: var(--radius-md); padding: 0.25rem 0.55rem; font-size: 0.82rem;
+  cursor: pointer; font-family: inherit; transition: background var(--motion), border-color var(--motion);
 }
+.plan-table-stat:hover { background: var(--primary-subtle); border-color: var(--primary); }
+.plan-table-stat.active { background: var(--primary); border-color: var(--primary); }
+.plan-table-stat.active .plan-table-stat-label { color: #fff; }
+.plan-table-stat.active .plan-table-stat-count { color: rgba(255, 255, 255, 0.85); }
 .plan-table-stat-label { color: var(--text-main); font-weight: 500; }
 .plan-table-stat-count { color: var(--text-muted); font-weight: 400; }
 .plan-table-stat-count b { font-weight: 700; }
+.plan-table-cell.hl { background: var(--primary-subtle); box-shadow: inset 0 0 0 2px var(--primary); }
 
 /* Table cell hover tooltip */
 .cell-tooltip {
