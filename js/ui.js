@@ -444,8 +444,7 @@
       chips.push(`<span class="waste-chip ${cls}${est ? " est" : ""}">${wv} g${est ? "*" : ""}</span>`);
     }
     const summary = mealSummary(meal, counts);
-    const tip = esc(meal.name) + (summary ? `<br>${esc(summary)}` : "");
-    return `<td class='plan-table-cell' data-w='${w}' data-d='${d}' title='${tip}'>` +
+    return `<td class='plan-table-cell' data-w='${w}' data-d='${d}' data-name='${esc(meal.name)}' data-summary='${esc(summary)}'>` +
       `<div class='plan-table-chips'>${chips.join("")}</div>` +
       `</td>`;
   }
@@ -472,6 +471,32 @@
     wrap.querySelectorAll(".plan-table-cell").forEach((el) => {
       el.addEventListener("click", (e) => { e.stopPropagation(); openPopover(el, e); });
     });
+    // Hover tooltip (styled, so the name + summary stack on separate lines).
+    const tip = $("cell-tooltip");
+    if (tip) {
+      wrap.addEventListener("mouseover", (e) => {
+        const cell = e.target.closest(".plan-table-cell");
+        if (!cell || !cell.dataset.name) return;
+        $("cell-tooltip-name").textContent = cell.dataset.name;
+        const sum = cell.dataset.summary || "";
+        const sumEl = $("cell-tooltip-summary");
+        sumEl.textContent = sum;
+        sumEl.classList.toggle("hidden", !sum);
+        tip.classList.remove("hidden");
+        const r = cell.getBoundingClientRect();
+        const tw = tip.offsetWidth, th = tip.offsetHeight;
+        let left = r.left + r.width / 2 - tw / 2;
+        left = Math.max(8, Math.min(left, window.innerWidth - tw - 8));
+        let top = r.top - th - 8;
+        if (top < 8) top = r.bottom + 8;
+        tip.style.left = left + "px";
+        tip.style.top = top + "px";
+      });
+      wrap.addEventListener("mouseout", (e) => {
+        if (!e.relatedTarget || !e.relatedTarget.closest || !e.relatedTarget.closest(".plan-table-cell"))
+          tip.classList.add("hidden");
+      });
+    }
   }
 
   // compact: the "Alla" overview — show only the tag chips (no meal name);
