@@ -708,13 +708,14 @@
   function renderWeekTabs() {
     const wrap = $("week-tabs");
     if (!wrap) return;
-    let html = `<button class='menu-week-button${app.viewWeek === "all" ? " is-active" : ""}' data-week='all'><span class='menu-week-button-number'>Alla</span></button>`;
+    // "Pool" is a view tab (not a week) that lists every meal in the pool.
+    // It leads the strip (before "Alla") so it's the first thing you see.
+    let html = `<button class='menu-week-button menu-week-button-pool${app.viewWeek === "pool" ? " is-active" : ""}' data-week='pool'><span class='menu-week-button-number'>Pool</span></button>`;
+    html += `<button class='menu-week-button${app.viewWeek === "all" ? " is-active" : ""}' data-week='all'><span class='menu-week-button-number'>Alla</span></button>`;
     for (let w = 0; w < D.WEEKS; w++) {
       const iso = app.plan ? isoWeek(app.plan[w][0].date) : null;
       html += `<button class='menu-week-button${app.viewWeek === w ? " is-active" : ""}' data-week='${w}'><span class='menu-week-button-number'>${iso != null ? iso : w + 1}</span></button>`;
     }
-    // "Pool" is a view tab (not a week): it lists every meal in the pool.
-    html += `<button class='menu-week-button menu-week-button-pool${app.viewWeek === "pool" ? " is-active" : ""}' data-week='pool'><span class='menu-week-button-number'>Pool</span></button>`;
     wrap.innerHTML = html;
     wrap.querySelectorAll(".menu-week-button").forEach((btn) => {
       btn.addEventListener("click", () => {

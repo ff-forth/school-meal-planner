@@ -228,8 +228,8 @@ code { background: var(--bg-body); border: 1px solid var(--border-light); border
 
 /* ---------- Pool tab (all meals currently in the pool) ---------- */
 /* The "Pool" view tab sits in the week strip; its list renders into the plan body. */
-.pool-search { margin-left: auto; min-width: 10rem; max-width: 22rem; }
-.menu-week-button-pool { margin-left: 0.5rem; border-left: 1px solid var(--border-light); }
+.pool-search { justify-self: center; min-width: 10rem; max-width: 22rem; }
+.menu-week-button-pool { margin-right: 0.5rem; border-right: 1px solid var(--border-light); }
 .pool-list {
   display: grid; gap: var(--space-3, 1rem); align-content: start;
   max-height: 48rem; overflow-y: auto; padding-right: 0.25rem;
@@ -264,8 +264,13 @@ code { background: var(--bg-body); border: 1px solid var(--border-light); border
 /* ---------- Plan panel ---------- */
 .plan-panel { padding: 0; }
 .report-header { background: var(--bg-header); border-bottom: 1px solid var(--border-light); padding: var(--space-2) var(--space-3); }
-.report-header-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); flex-wrap: wrap; }
-.report-header .report-title { font-size: 1.1rem; display: flex; align-items: center; gap: 0.6rem; }
+/* Title (left) | pool search (center) | week tabs (right). The search gets the
+   flexible middle column so it sits centered; title and tabs take their natural
+   width, so the tabs stay pinned to the right and don't shift when the search
+   appears/disappears (it only shows on the Pool tab). */
+.report-header-row { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: var(--space-2); }
+.report-header .report-title { font-size: 1.1rem; display: flex; align-items: center; gap: 0.6rem; justify-self: start; }
+#week-tabs { justify-self: end; }
 .plan-hint { margin: 0.4rem 0 0; font-size: 0.78rem; color: var(--text-muted); }
 .plan-body { padding: var(--space-2); }
 .plan-empty { text-align: center; color: var(--text-light); padding: 3.5rem 1rem; font-size: 0.9rem; }
