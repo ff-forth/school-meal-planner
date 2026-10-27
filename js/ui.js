@@ -372,12 +372,12 @@
         const buf = await IO.readArrayBuffer(f);
         if (kind === "plan") {
           // A saved plan is loaded on its own (it isn't part of the menu data).
-          loadPlanFromRows(RI.readPlan(IO.readWorkbook(buf)), f.name);
+          loadPlanFromRows(RI.readPlan(RI.readWorkbook(buf)), f.name);
           continue;
         }
         if (kind === "pool") {
           // A saved pool is a complete snapshot that replaces the data.
-          loadPoolFromRows(RI.readPool(IO.readWorkbook(buf)), f.name);
+          loadPoolFromRows(RI.readPool(RI.readWorkbook(buf)), f.name);
           continue;
         }
         const res = RI.addFile(loader, f.name, buf);
@@ -526,7 +526,7 @@
       if (!f) return;
       try {
         const buf = await IO.readArrayBuffer(f);
-        loadPlanFromRows(RI.readPlan(IO.readWorkbook(buf)), f.name);
+        loadPlanFromRows(RI.readPlan(RI.readWorkbook(buf)), f.name);
       } catch (err) {
         const status = $("status-real");
         status.textContent = `Kunde inte läsa planen: ${err.message}`;
@@ -545,7 +545,7 @@
       if (!f) return;
       try {
         const buf = await IO.readArrayBuffer(f);
-        loadPoolFromRows(RI.readPool(IO.readWorkbook(buf)), f.name);
+        loadPoolFromRows(RI.readPool(RI.readWorkbook(buf)), f.name);
       } catch (err) {
         const status = $("status-real");
         status.textContent = `Kunde inte läsa poolen: ${err.message}`;
