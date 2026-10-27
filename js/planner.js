@@ -145,6 +145,43 @@
     return pen;
   }
 
+  // Hard cap for upper-bound rules (max / exakt): would placing `meal` at
+  // `dayIdx` push any window over the rule's count? Uses per-rule prefix sums
+  // (precomputed once per candidate batch) so the per-candidate check is cheap.
+  // `capPrefix` entries: { r, P, W, curHas } where P is the prefix count of the
+  // rule's component across the current plan and curHas is whether the slot's
+  // current meal already has the component.
+  function capExceeds(capPrefix, meal, dayIdx) {
+    const total = D.WEEKS * D.DAYS.length;
+    for (const { r, P, W, curHas } of capPrefix) {
+      if (!mealHasComponent(meal, r.name)) continue;
+      const d = 1 - (curHas ? 1 : 0); // +1 only if this meal adds the component
+      if (d <= 0) continue;
+      for (let e = dayIdx; e < Math.min(total, dayIdx + W); e++) {
+        const start = Math.max(0, e - W + 1);
+        if (P[e + 1] - P[start] + d > r.count) return true;
+      }
+    }
+    return false;
+  }
+
+  // Build the per-rule prefix data for the hard cap, given the current plan.
+  function buildCapPrefix(plan, dayIdx, rules) {
+    const total = D.WEEKS * D.DAYS.length;
+    const curMeal = plan[Math.floor(dayIdx / D.DAYS.length)][dayIdx % D.DAYS.length].meal;
+    return (rules || [])
+      .filter((r) => r.kind === "max" || r.kind === "exact")
+      .map((r) => {
+        const P = new Array(total + 1);
+        P[0] = 0;
+        for (let i = 0; i < total; i++) {
+          const m = plan[Math.floor(i / D.DAYS.length)][i % D.DAYS.length].meal;
+          P[i + 1] = P[i] + (m && mealHasComponent(m, r.name) ? 1 : 0);
+        }
+        return { r, P, W: r.period === "14d" ? 14 : D.DAYS.length, curHas: curMeal ? mealHasComponent(curMeal, r.name) : false };
+      });
+  }
+
   // Scoring bonus/penalty for a candidate meal against the component rules.
   function componentRuleScore(meal, dayIdx, state, rules) {
     let score = 0;
@@ -324,10 +361,14 @@
       : null;
     const ctx = { prevDay, weekIdx: w, dayIdx, plan: state.plan, state };
 
+    // Hard cap for max/exact component rules (built once, checked per meal).
+    const capPrefix = buildCapPrefix(state.plan, dayIdx, criteria.componentRules);
+
     const out = [];
     for (const meal of state.pool) {
       if (excludeId && meal.id === excludeId) continue;
       if (!hardOK(meal, dayIdx, state, criteria, relaxGap)) continue;
+      if (capExceeds(capPrefix, meal, dayIdx)) continue;
       const { score, reasons } = scoreMeal(meal, ctx, criteria, mined);
       out.push({ meal, score, reasons });
     }
@@ -483,11 +524,13 @@
       ? state.plan[Math.floor(prevDayIdx / D.DAYS.length)][prevDayIdx % D.DAYS.length]
       : null;
     const ctx = { prevDay, weekIdx: w, dayIdx, plan: state.plan, state };
+    const capPrefix = buildCapPrefix(state.plan, dayIdx, criteria.componentRules);
     let best = null, bestScore = -Infinity;
     for (const meal of state.pool) {
       const uses = state.uses.get(meal.id) || 0;
       if (uses >= criteria.maxUses) continue;
       for (const a of meal.allergens) if (criteria.excludedAllergens.includes(a)) continue;
+      if (capExceeds(capPrefix, meal, dayIdx)) continue;
       const { score } = scoreMeal(meal, ctx, criteria, mined);
       if (score > bestScore) { bestScore = score; best = meal; }
     }
