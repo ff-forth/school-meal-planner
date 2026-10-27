@@ -48,8 +48,15 @@
   // "<component>, max 1 g/14d". A line without max/minst is a guideline only
   // (shown in the summary, not enforced). Matching is on the meal's
   // protein/starch/prep components (diacritic-normalised substring).
-  const COMPONENT_RULE_RE = /^\s*([^,]+?)\s*,\s*(max|minst)\s+(\d+)\s*g\s*\/\s*(v|14d)\s*$/i;
+  const COMPONENT_RULE_RE = /^\s*([^,]+?)\s*,\s*(max|minst|exakt|=)\s+(\d+)\s*g\s*\/\s*(v|14d)\s*$/i;
   const COMPONENT_RULE_FIELDS = ["protein", "starch", "prep"];
+
+  function ruleKind(raw) {
+    const k = String(raw).toLowerCase();
+    if (k === "max") return "max";
+    if (k === "=" || k === "exakt") return "exact";
+    return "min";
+  }
 
   function parseComponentRules(text) {
     const rules = [];
@@ -59,7 +66,7 @@
       const m = t.match(COMPONENT_RULE_RE);
       if (!m) continue;
       const name = m[1].trim();
-      const kind = m[2].toLowerCase() === "max" ? "max" : "min";
+      const kind = ruleKind(m[2]);
       const count = parseInt(m[3], 10);
       const period = m[4].toLowerCase() === "14d" ? "14d" : "week";
       if (!name || !count) continue;
@@ -68,7 +75,8 @@
     return rules;
   }
 
-  // Does a meal contain this component (by its normalised component value)?
+  // Does a meal contain this component (by its normalised component value,
+  // falling back to the meal name so rules match the day-card tags)?
   function mealHasComponent(meal, name) {
     const comp = meal.components || {};
     const norm = D.slugify(name); // strips diacritics, lowercases
@@ -77,7 +85,8 @@
       const v = comp[f];
       if (v && D.slugify(v).includes(norm)) return true;
     }
-    return false;
+    const nm = meal.name ? D.slugify(meal.name) : "";
+    return nm.includes(norm);
   }
 
   // Count how many times a component appears in the plan within `windowDays`
@@ -102,11 +111,11 @@
     return count;
   }
 
-  // Penalty for max-rules (over the limit in the relevant window).
+  // Penalty for max/exact-rules (over the limit in the relevant window).
   function componentMaxPenalty(state, rules) {
     let pen = 0;
     for (const r of rules) {
-      if (r.kind !== "max") continue;
+      if (r.kind !== "max" && r.kind !== "exact") continue;
       const has = (m) => mealHasComponent(m, r.name);
       const windowDays = r.period === "14d" ? 14 : D.DAYS.length;
       for (let w = 0; w < D.WEEKS; w++)
@@ -119,16 +128,19 @@
     return pen;
   }
 
-  // Penalty for min-rules (a week with fewer than the required count).
+  // Penalty for min/exact-rules (a window with fewer than the required count).
   function componentMinPenalty(state, rules) {
     let pen = 0;
     for (const r of rules) {
-      if (r.kind !== "min") continue;
+      if (r.kind !== "min" && r.kind !== "exact") continue;
       const has = (m) => mealHasComponent(m, r.name);
-      for (let w = 0; w < D.WEEKS; w++) {
-        const c = componentCountInWeek(state.plan, w, has);
-        if (c < r.count) pen += (r.count - c) * 4;
-      }
+      const windowDays = r.period === "14d" ? 14 : D.DAYS.length;
+      for (let w = 0; w < D.WEEKS; w++)
+        for (let d = 0; d < D.DAYS.length; d++) {
+          const dayIdx = dayIndexOf(w, d);
+          const c = componentCountInWindow(state.plan, dayIdx, windowDays, has);
+          if (c < r.count) pen += (r.count - c) * 4;
+        }
     }
     return pen;
   }
@@ -140,15 +152,15 @@
     for (const r of rules) {
       if (!mealHasComponent(meal, r.name)) continue;
       const has = (m) => mealHasComponent(m, r.name);
-      if (r.kind === "max") {
-        const windowDays = r.period === "14d" ? 14 : D.DAYS.length;
-        const c = componentCountInWindow(state.plan, dayIdx, windowDays, has);
+      const windowDays = r.period === "14d" ? 14 : D.DAYS.length;
+      const c = componentCountInWindow(state.plan, dayIdx, windowDays, has);
+      if (r.kind === "max" || r.kind === "exact") {
         if (c >= r.count) {
           score -= 1.5;
           reasons.push(`${r.name} överskrider ${r.count} g/${r.period === "14d" ? "14d" : "v"}`);
         }
-      } else {
-        const c = componentCountInWeek(state.plan, Math.floor(dayIdx / D.DAYS.length), has);
+      }
+      if (r.kind === "min" || r.kind === "exact") {
         if (c < r.count) {
           score += 1.2;
           reasons.push(`${r.name} behövs denna vecka`);
@@ -161,21 +173,35 @@
   // Component-rule issues for the finished plan (status bar).
   function componentIssues(plan, rules) {
     const issues = [];
-    const state = { plan };
     for (const r of rules) {
       const has = (m) => mealHasComponent(m, r.name);
-      if (r.kind === "max") {
-        const windowDays = r.period === "14d" ? 14 : D.DAYS.length;
+      const windowDays = r.period === "14d" ? 14 : D.DAYS.length;
+      const per = r.period === "14d" ? "14d" : "v";
+      if (r.kind === "max" || r.kind === "exact") {
         let worst = 0;
         for (let w = 0; w < D.WEEKS; w++)
           for (let d = 0; d < D.DAYS.length; d++)
             worst = Math.max(worst, componentCountInWindow(plan, dayIndexOf(w, d), windowDays, has));
-        if (worst > r.count) issues.push(`${r.name}: max ${r.count} g/${r.period === "14d" ? "14d" : "v"} överskrids (högst ${worst})`);
-      } else {
-        let weeksMet = 0;
+        if (worst > r.count) issues.push(`${r.name}: max ${r.count} g/${per} överskrids (högst ${worst})`);
+      }
+      if (r.kind === "min" || r.kind === "exact") {
+        let windowsMet = 0, windows = 0;
         for (let w = 0; w < D.WEEKS; w++)
-          if (componentCountInWeek(plan, w, has) >= r.count) weeksMet++;
-        if (weeksMet < D.WEEKS) issues.push(`${r.name}: minst ${r.count} g/v uppfyllt i ${weeksMet}/${D.WEEKS} veckor`);
+          for (let d = 0; d < D.DAYS.length; d++) {
+            windows++;
+            if (componentCountInWindow(plan, dayIndexOf(w, d), windowDays, has) >= r.count) windowsMet++;
+          }
+        if (r.kind === "exact") {
+          let worst = 0, best = 99;
+          for (let w = 0; w < D.WEEKS; w++)
+            for (let d = 0; d < D.DAYS.length; d++) {
+              const c = componentCountInWindow(plan, dayIndexOf(w, d), windowDays, has);
+              worst = Math.max(worst, c); best = Math.min(best, c);
+            }
+          if (worst > r.count || best < r.count) issues.push(`${r.name}: exakt ${r.count} g/${per} ej uppfyllt (min ${best}, max ${worst})`);
+        } else if (windowsMet < windows) {
+          issues.push(`${r.name}: minst ${r.count} g/${per} ej uppfyllt alla perioder`);
+        }
       }
     }
     return issues;

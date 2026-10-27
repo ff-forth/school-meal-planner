@@ -95,6 +95,7 @@
     { name: "Fläsk", kind: "max", count: 2, period: "week" },
     { name: "Korv", kind: "max", count: 1, period: "14d" },
     { name: "Ris", kind: "max", count: 1, period: "14d" },
+    { name: "Soppa", kind: "exact", count: 1, period: "week" },
     { name: "Fisk", kind: "min", count: 1, period: "week" },
     { name: "Kyckling", kind: "min", count: 1, period: "week" },
   ];
@@ -106,6 +107,7 @@
       `<select class="inp comp-rule-kind">` +
         `<option value="max"${r.kind === "max" ? " selected" : ""}>max</option>` +
         `<option value="min"${r.kind === "min" ? " selected" : ""}>minst</option>` +
+        `<option value="exact"${r.kind === "exact" ? " selected" : ""}>exakt</option>` +
       `</select>` +
       `<input type="number" class="inp comp-rule-count" min="1" step="1" value="${r.count || 1}" />` +
       `<select class="inp comp-rule-period">` +
@@ -530,7 +532,9 @@
     }
     for (const r of c.componentRules || []) {
       const issue = ev.issues.find((i) => i.startsWith(r.name + ":"));
-      const label = r.name + (r.kind === "max" ? ` ≤${r.count}/${r.period === "14d" ? "14d" : "v"}` : ` ≥${r.count}/v`);
+      const per = r.period === "14d" ? "14d" : "v";
+      const sym = r.kind === "max" ? `≤${r.count}/${per}` : r.kind === "exact" ? `=${r.count}/${per}` : `≥${r.count}/${per}`;
+      const label = r.name + " " + sym;
       chips.push(chip(issue ? "warn" : "ok", `${issue ? label + " ⚠" : label + " ✓"}`));
     }
     $("status-bar").innerHTML = chips.join(" ");
