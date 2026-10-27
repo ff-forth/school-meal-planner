@@ -226,27 +226,17 @@ code { background: var(--bg-body); border: 1px solid var(--border-light); border
 .gen-progress-track { height: 8px; background: var(--border-light); border-radius: 999px; overflow: hidden; }
 .gen-progress-bar { height: 100%; width: 0; background: var(--primary); border-radius: 999px; transition: width 0.15s ease; }
 
-/* ---------- Pool overview panel (all meals currently in the pool) ---------- */
-.pool-panel { padding: 0; }
-.pool-panel-head {
-  display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap;
-  padding: var(--space-2) var(--space-3);
-  background: var(--bg-header); border-bottom: 1px solid var(--border-light);
-}
-.pool-title { font-size: 1rem; font-weight: 600; margin: 0; display: flex; align-items: center; gap: 0.5rem; }
-.pool-title .num {
-  background: var(--primary-subtle); color: var(--primary);
-  font-size: 0.72rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 999px;
-}
-.pool-count { font-size: 0.8rem; font-weight: 500; color: var(--text-muted); }
-.pool-search { flex: 1 1 12rem; min-width: 10rem; max-width: 22rem; }
-.pool-toggle { white-space: nowrap; }
-.pool-panel-body { padding: var(--space-2) var(--space-3); }
-.pool-empty { color: var(--text-light); font-size: 0.85rem; padding: 0.5rem 0; }
+/* ---------- Pool tab (all meals currently in the pool) ---------- */
+/* The "Pool" view tab sits in the week strip; its list renders into the plan body. */
+.pool-search { margin-left: auto; min-width: 10rem; max-width: 22rem; }
+.menu-week-button-pool { margin-left: 0.5rem; border-left: 1px solid var(--border-light); }
 .pool-list {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(24rem, 1fr));
-  gap: 0.35rem; max-height: 24rem; overflow-y: auto;
+  gap: 0.35rem; align-content: start; max-height: 24rem; overflow-y: auto;
 }
+.pool-list-head { grid-column: 1 / -1; }
+.pool-count { font-size: 0.8rem; font-weight: 500; color: var(--text-muted); }
+.pool-empty { color: var(--text-light); font-size: 0.85rem; padding: 0.5rem 0; }
 .pool-item {
   display: flex; align-items: center; gap: 0.5rem;
   padding: 0.3rem 0.5rem; border: 1px solid var(--border-light); border-radius: var(--radius-sm, 6px);

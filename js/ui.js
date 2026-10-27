@@ -350,7 +350,7 @@
     app.dayRecords = records;
     app.pool = records.length ? D.buildMealPool(records) : null;
     applyEstimates();
-    renderPoolOverview();
+    if (app.viewWeek === "pool") renderPoolOverview();
     checkReady();
     return joined;
   }
@@ -620,7 +620,7 @@
     // without going back to setup).
     $("btn-pool").classList.remove("hidden");
     $("btn-plan").classList.remove("hidden");
-    renderPoolOverview();
+    renderPlan();
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
   function showSetupPage() {
@@ -680,11 +680,13 @@
       const iso = app.plan ? isoWeek(app.plan[w][0].date) : null;
       html += `<button class='menu-week-button${app.viewWeek === w ? " is-active" : ""}' data-week='${w}'><span class='menu-week-button-number'>${iso != null ? iso : w + 1}</span></button>`;
     }
+    // "Pool" is a view tab (not a week): it lists every meal in the pool.
+    html += `<button class='menu-week-button menu-week-button-pool${app.viewWeek === "pool" ? " is-active" : ""}' data-week='pool'><span class='menu-week-button-number'>Pool</span></button>`;
     wrap.innerHTML = html;
     wrap.querySelectorAll(".menu-week-button").forEach((btn) => {
       btn.addEventListener("click", () => {
         const v = btn.dataset.week;
-        app.viewWeek = v === "all" ? "all" : parseInt(v, 10);
+        app.viewWeek = v === "all" ? "all" : (v === "pool" ? "pool" : parseInt(v, 10));
         renderWeekTabs();
         renderPlan();
       });
@@ -694,6 +696,17 @@
   // ---------- Plan (all weeks OR single week, both as day cards) ----------
   function renderPlan() {
     const empty = $("grid-empty"), cards = $("week-cards");
+    const search = $("pool-search");
+    // The Pool tab is a view, not a week: it lists every meal in the pool and
+    // works even when no plan is loaded yet.
+    if (app.viewWeek === "pool") {
+      empty.classList.add("hidden");
+      cards.classList.remove("hidden");
+      if (search) search.classList.remove("hidden");
+      renderPoolOverview();
+      return;
+    }
+    if (search) search.classList.add("hidden");
     if (!app.plan) {
       empty.classList.remove("hidden"); cards.classList.add("hidden");
       return;
@@ -751,14 +764,12 @@
   }
 
   // ---------- Pool overview (all meals currently in the pool) ----------
-  // A searchable, collapsible list of every unique meal in the pool, shown on
-  // the plan page so you can see/verify what's loaded (names + component chips
-  // + waste). Re-rendered whenever the pool changes.
+  // The "Pool" tab in the week strip: a searchable list of every unique meal in
+  // the pool, so you can see/verify what's loaded (names + component chips +
+  // waste). Renders into #week-cards (the same body the plan views use).
   function renderPoolOverview() {
-    const wrap = $("pool-overview");
+    const wrap = $("week-cards");
     if (!wrap) return;
-    const count = $("pool-count");
-    if (count) count.textContent = app.pool ? `· ${app.pool.length} måltider` : "";
     if (!app.pool || !app.pool.length) {
       wrap.innerHTML = `<p class="pool-empty">Ingen pool laddad. Ladda en pool (1. Ladda pool) eller importera data.</p>`;
       return;
@@ -786,17 +797,12 @@
         waste +
         `</div>`;
     }).join("");
-    wrap.innerHTML = `<div class="pool-list">${items}</div>`;
+    wrap.innerHTML = `<div class="pool-list"><div class="pool-list-head"><span class="pool-count">${app.pool.length} måltider</span></div>${items}</div>`;
   }
 
   function setupPoolOverview() {
-    const search = $("pool-search"), toggle = $("pool-toggle"), body = $("pool-overview");
+    const search = $("pool-search");
     if (search) search.addEventListener("input", renderPoolOverview);
-    if (toggle && body) toggle.addEventListener("click", () => {
-      const hidden = body.classList.toggle("hidden");
-      toggle.textContent = hidden ? "▼ Visa" : "▲ Dölj";
-      toggle.setAttribute("aria-expanded", String(!hidden));
-    });
   }
 
   // "Alla" overview as a table: 5 weekday rows × 8 week columns, tags only.
