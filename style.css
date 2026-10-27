@@ -194,6 +194,22 @@ code { background: var(--bg-body); border: 1px solid var(--border-light); border
 }
 .input-section-title:first-child { margin-top: 0; }
 
+/* Plandata: numbered load steps (1. Pool, 2. Plan), each with its own button. */
+.plan-steps { list-style: none; margin: 0.5rem 0 0; padding: 0; display: grid; gap: 0.5rem; }
+.plan-step {
+  display: grid; grid-template-columns: 1.75rem 1fr; gap: 0.55rem; align-items: start;
+  padding: 0.55rem 0.6rem; border: 1px solid var(--border-light); border-radius: var(--radius-md);
+  background: var(--bg-body);
+}
+.plan-step-num {
+  width: 1.5rem; height: 1.5rem; border-radius: 50%; background: var(--primary); color: var(--white);
+  font-size: 0.8rem; font-weight: 700; display: flex; align-items: center; justify-content: center;
+}
+.plan-step-body { min-width: 0; display: grid; gap: 0.3rem; }
+.plan-step-btn { justify-self: start; min-height: 30px; padding: 0.3rem 0.7rem; font-size: 0.8rem; }
+.plan-step-hint { margin: 0; font-size: 0.74rem; color: var(--text-muted); line-height: 1.35; }
+.plan-steps-note { margin-top: 0.45rem; font-size: 0.72rem; color: var(--text-light); }
+
 /* ---------- Badges / chips ---------- */
 .badge {
   display: inline-flex; align-items: center; gap: 0.3rem;

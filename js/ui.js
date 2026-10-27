@@ -590,10 +590,16 @@
     });
   }
 
+  // The pool/plan buttons appear in two places — the header (btn-pool/btn-plan)
+  // and the Plandata section (btn-load-pool/btn-load-plan). All of them drive the
+  // same hidden file inputs, so one change handler covers every button.
   function setupPlanImport() {
-    const btn = $("btn-plan"), input = $("file-plan");
-    if (!btn || !input) return;
-    btn.addEventListener("click", () => input.click());
+    const input = $("file-plan");
+    if (!input) return;
+    ["btn-plan", "btn-load-plan"].forEach((id) => {
+      const btn = $(id);
+      if (btn) btn.addEventListener("click", () => input.click());
+    });
     input.addEventListener("change", async () => {
       const f = input.files && input.files[0];
       input.value = "";
@@ -610,9 +616,12 @@
   }
 
   function setupPoolImport() {
-    const btn = $("btn-pool"), input = $("file-pool");
-    if (!btn || !input) return;
-    btn.addEventListener("click", () => input.click());
+    const input = $("file-pool");
+    if (!input) return;
+    ["btn-pool", "btn-load-pool"].forEach((id) => {
+      const btn = $(id);
+      if (btn) btn.addEventListener("click", () => input.click());
+    });
     input.addEventListener("change", async () => {
       const f = input.files && input.files[0];
       input.value = "";

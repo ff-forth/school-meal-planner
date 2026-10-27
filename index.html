@@ -52,14 +52,24 @@
           </div>
 
           <h3 class="input-section-title">Plandata</h3>
-          <p class="helper-text">
-            För att återuppta en sparad plan, ladda <b>båda</b> – i denna ordning:
-            <b>1. Pool</b> (alla måltider med svinn/ätande + komponenter), sedan
-            <b>2. Plan</b> (den 8-veckorsplanen). Planens rätter matchas mot poolen
-            efter namn, så poolen måste vara laddad först för att rätterna ska få med
-            komponenter och svinn. Knapparna <b>1. Ladda pool</b> / <b>2. Ladda plan</b>
-            i toppen fungerar även på plansidan.
-          </p>
+          <p class="helper-text">Återuppta en sparad plan – ladda <b>båda</b> i ordning.</p>
+          <ol class="plan-steps">
+            <li class="plan-step">
+              <span class="plan-step-num">1</span>
+              <div class="plan-step-body">
+                <button id="btn-load-pool" class="btn btn-ghost plan-step-btn">📂 Ladda pool</button>
+                <p class="plan-step-hint">Alla måltider med svinn/ätande + komponenter.</p>
+              </div>
+            </li>
+            <li class="plan-step">
+              <span class="plan-step-num">2</span>
+              <div class="plan-step-body">
+                <button id="btn-load-plan" class="btn btn-ghost plan-step-btn">📂 Ladda plan</button>
+                <p class="plan-step-hint">Den 8-veckorsplanen. Rätterna matchas mot poolen efter namn – ladda poolen först så får de med komponenter och svinn.</p>
+              </div>
+            </li>
+          </ol>
+          <p class="helper-text plan-steps-note">Samma knappar finns i toppen och fungerar även på plansidan.</p>
 
           <h3 class="input-section-title">Skolmat (.json)</h3>
           <div class="btn-row">
