@@ -90,8 +90,8 @@
           </div>
           <p class="helper-text">
             <b>Komponentregler</b> begränsar hur ofta en komponent får förekomma. Välj
-            <b>max</b> (högst N gånger) eller <b>minst</b> (minst N gånger) och perioden
-            <b>vecka</b> eller <b>14 dagar</b>.
+            <b>max</b> (högst N), <b>minst</b> (minst N) eller <b>exakt</b> (exakt N) och
+            perioden <b>vecka</b> eller <b>14 dagar</b>.
           </p>
         </div>
       </section>
@@ -104,6 +104,10 @@
             <input type="date" id="c-start" class="inp" value="2026-09-14" />
           </div>
           <button id="btn-generate" class="btn btn-primary w-full" disabled>✨ Fyll i 8-veckorsplan</button>
+          <div class="gen-progress hidden" id="gen-progress">
+            <div class="gen-progress-label" id="gen-progress-label">Genererar plan…</div>
+            <div class="gen-progress-track"><div class="gen-progress-bar" id="gen-progress-bar"></div></div>
+          </div>
           <p class="helper-text mt-2">Importera datan (eller ladda exemplet) och ställ in kriterierna, sedan genererar du planen. Planen börjar på valt datum och löper 8 veckor framåt.</p>
         </div>
       </section>

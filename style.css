@@ -210,6 +210,12 @@ code { background: var(--bg-body); border: 1px solid var(--border-light); border
 /* estimated (component-based) value — dashed outline to signal it's not measured */
 .waste-chip.est { border: 1px dashed currentColor; }
 
+/* Generation progress bar */
+.gen-progress { margin-top: var(--space-2); }
+.gen-progress-label { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.3rem; }
+.gen-progress-track { height: 8px; background: var(--border-light); border-radius: 999px; overflow: hidden; }
+.gen-progress-bar { height: 100%; width: 0; background: var(--primary); border-radius: 999px; transition: width 0.15s ease; }
+
 /* ---------- Plan panel ---------- */
 .plan-panel { padding: 0; }
 .report-header { background: var(--bg-header); border-bottom: 1px solid var(--border-light); padding: var(--space-2) var(--space-3); }

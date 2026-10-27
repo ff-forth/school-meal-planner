@@ -325,8 +325,10 @@
     return out;
   }
 
-  // Generate the full plan (greedy + repair + polish). Returns plan[w][d] = meal.
-  function generate(pool, mined, criteria, startISO) {
+  // Generate the full plan (greedy + repair + polish). Returns a Promise that
+  // resolves to plan[w][d] = meal. The polish pass is chunked so the UI can
+  // paint a progress bar (onProgress(done, total)) instead of freezing.
+  function generate(pool, mined, criteria, startISO, onProgress) {
     const plan = [];
     for (let w = 0; w < D.WEEKS; w++) {
       plan.push([]);
@@ -353,9 +355,13 @@
       }
     }
 
-    // Polish: local search minimising the combined penalty.
-    polish(state, criteria, mined);
-    return plan;
+    // Polish: local search minimising the combined penalty (chunked/async).
+    return new Promise((resolve) => {
+      polish(state, criteria, mined, (done, total, isDone) => {
+        if (onProgress) onProgress(done, total);
+        if (isDone) resolve(plan);
+      });
+    });
   }
 
   // Total penalty for the current plan. Lower is better; 0 = fully compliant.
@@ -411,26 +417,41 @@
     return pen;
   }
 
-  function polish(state, criteria, mined) {
-    let cur = penalty(state, criteria);
+  // Local search minimising the combined penalty. Runs in small batches and
+  // yields to the event loop between them so the UI stays responsive; the
+  // callback receives (done, total, isDone) after each batch.
+  function polish(state, criteria, mined, onProgress) {
     const maxIter = 3000;
-    for (let iter = 0; iter < maxIter && cur > 0; iter++) {
-      const w = Math.floor(Math.random() * D.WEEKS);
-      const d = Math.floor(Math.random() * D.DAYS.length);
-      const curMeal = state.plan[w][d].meal;
-      if (!curMeal) continue;
-      const cands = getCandidates(w, d, state, criteria, mined, curMeal.id, true);
-      if (!cands.length) continue;
-      let best = null, bestPen = cur;
-      for (const c of cands.slice(0, 15)) {
-        if (c.meal.id === curMeal.id) continue;
-        swap(state, w, d, c.meal);
-        const p = penalty(state, criteria);
-        if (p < bestPen) { bestPen = p; best = c.meal; }
-        swap(state, w, d, curMeal); // undo
+    const batch = 40;
+    let cur = penalty(state, criteria);
+    let iter = 0;
+    const tick = () => {
+      const end = Math.min(maxIter, iter + batch);
+      while (iter < end && cur > 0) {
+        const w = Math.floor(Math.random() * D.WEEKS);
+        const d = Math.floor(Math.random() * D.DAYS.length);
+        const curMeal = state.plan[w][d].meal;
+        if (curMeal) {
+          const cands = getCandidates(w, d, state, criteria, mined, curMeal.id, true);
+          if (cands.length) {
+            let best = null, bestPen = cur;
+            for (const c of cands.slice(0, 15)) {
+              if (c.meal.id === curMeal.id) continue;
+              swap(state, w, d, c.meal);
+              const p = penalty(state, criteria);
+              if (p < bestPen) { bestPen = p; best = c.meal; }
+              swap(state, w, d, curMeal); // undo
+            }
+            if (best) { swap(state, w, d, best); cur = bestPen; }
+          }
+        }
+        iter++;
       }
-      if (best) { swap(state, w, d, best); cur = bestPen; }
-    }
+      const done = Math.min(iter, maxIter);
+      if (onProgress) onProgress(done, maxIter, done >= maxIter || cur <= 0);
+      if (done < maxIter && cur > 0) setTimeout(tick, 0);
+    };
+    tick();
   }
 
   // Swap a slot to `meal`, updating uses/lastUsed bookkeeping.

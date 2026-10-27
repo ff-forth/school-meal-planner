@@ -322,11 +322,30 @@
   $("btn-back").addEventListener("click", showSetupPage);
 
   // ---------- Generate ----------
-  $("btn-generate").addEventListener("click", () => {
+  function setProgress(done, total) {
+    const bar = $("gen-progress-bar");
+    const label = $("gen-progress-label");
+    if (!bar) return;
+    const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+    bar.style.width = pct + "%";
+    if (label) label.textContent = `Genererar plan… ${pct}%`;
+  }
+  function showProgress(on) {
+    const el = $("gen-progress");
+    if (!el) return;
+    el.classList.toggle("hidden", !on);
+    if (on) setProgress(0, 1);
+  }
+
+  $("btn-generate").addEventListener("click", async () => {
+    const btn = $("btn-generate");
+    btn.disabled = true;
     app.criteria = readCriteria();
     app.mined = M.mine(app.dayRecords);
     const startISO = $("c-start").value || null;
-    app.plan = P.generate(app.pool, app.mined, app.criteria, startISO);
+    showProgress(true);
+    app.plan = await P.generate(app.pool, app.mined, app.criteria, startISO, setProgress);
+    showProgress(false);
     app.state = { plan: app.plan, pool: app.pool, uses: new Map(), lastUsed: new Map() };
     rebuildState();
     app.eval = P.evaluatePlan(app.plan, app.criteria);
@@ -334,6 +353,7 @@
     renderPlan();
     renderStatus();
     showPlanPage();
+    btn.disabled = false;
   });
 
   // ---------- Week strip ----------
