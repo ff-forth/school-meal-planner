@@ -42,7 +42,7 @@
     return Math.ceil(((dt - yearStart) / 86400000 + 1) / 7);
   }
 
-  // ---------- Category badge (protein → Fisk/Fågel/Kött/Vegetariskt) ----------
+  // ---------- Category badge (protein → Fisk/Kyckling/Kött/Vegetariskt) ----------
   const ICONS = {
     salad: '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 21h10"/><path d="M12 21a9 9 0 0 0 9-9H3a9 9 0 0 0 9 9Z"/><path d="M11.38 12a2.4 2.4 0 0 1-.4-4.77 2.4 2.4 0 0 1 3.2-2.77 2.4 2.4 0 0 1 3.47-.63 2.4 2.4 0 0 1 3.37 3.37 2.4 2.4 0 0 1-1.1 3.7 2.51 2.51 0 0 1 .03 1.1"/><path d="m13 12 4-4"/><path d="M10.9 7.25A3.99 3.99 0 0 0 4 10c0 .73.2 1.41.54 2"/></svg>',
     fish: '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 12c.94-3.46 4.94-6 8.5-6 3.56 0 6.06 2.54 7 6-.94 3.47-3.44 6-7 6s-7.56-2.53-8.5-6Z"/><path d="M18 12v.5"/><path d="M16 17.93a9.77 9.77 0 0 1 0-11.86"/><path d="M7 10.67C7 8 5.58 5.97 2.73 5.5c-1 1.5-1 5 .23 6.5-1.24 1.5-1.24 5-.23 6.5C5.58 18.03 7 16 7 13.33"/></svg>',
@@ -56,7 +56,7 @@
   function categoryOf(meal) {
     const p = (meal.components && meal.components.protein ? meal.components.protein : "");
     if (/fisk|lax|tunfisk|skaldjur|krabba/.test(p)) return { label: "Fisk", icon: "fish", cls: "badge-info" };
-    if (/kyckling|fågel|pullad|gyros/.test(p)) return { label: "Fågel", icon: "drumstick", cls: "badge-neutral" };
+    if (/kyckling|fågel|pullad|gyros/.test(p)) return { label: "Kyckling", icon: "drumstick", cls: "badge-neutral" };
     if (/soja|vego|balj|kikarts|linse|falafel|ost/.test(p)) return { label: "Vegetariskt", icon: "leaf", cls: "badge-success" };
     // pork (griskött) vs beef (nötkött) — these are distinct and must be shown separately
     if (/flask|falukorv|korv|wienerkorv|blodpudding/.test(p)) return { label: "Fläsk", icon: "pork", cls: "badge-warning" };
