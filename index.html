@@ -115,15 +115,20 @@
         <h2 class="report-panel-title"><span class="num">3</span> Generera</h2>
         <div class="panel-body">
           <div class="field">
-            <label class="lbl" for="c-start">Startdatum (måndag)</label>
-            <input type="date" id="c-start" class="inp" value="2026-09-14" />
+            <label class="lbl" for="c-week">Startvecka</label>
+            <div class="week-pick">
+              <input type="number" id="c-week" class="inp week-pick-week" min="1" max="53" value="38" aria-label="Vecka" />
+              <span class="week-pick-sep">vecka</span>
+              <input type="number" id="c-year" class="inp week-pick-year" min="2000" max="2100" value="2026" aria-label="År" />
+            </div>
+            <p class="helper-text week-pick-hint" id="c-start-hint"></p>
           </div>
           <button id="btn-generate" class="btn btn-primary w-full" disabled>✨ Fyll i 8-veckorsplan</button>
           <div class="gen-progress hidden" id="gen-progress">
             <div class="gen-progress-label" id="gen-progress-label">Genererar plan…</div>
             <div class="gen-progress-track"><div class="gen-progress-bar" id="gen-progress-bar"></div></div>
           </div>
-          <p class="helper-text mt-2">Importera datan (eller ladda exemplet) och ställ in kriterierna, sedan genererar du planen. Planen börjar på valt datum och löper 8 veckor framåt.</p>
+          <p class="helper-text mt-2">Importera datan (eller ladda exemplet) och ställ in kriterierna, sedan genererar du planen. Planen börjar på vald vecka och löper 8 veckor framåt.</p>
         </div>
       </section>
     </div>

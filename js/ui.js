@@ -44,6 +44,19 @@
     return Math.ceil(((dt - yearStart) / 86400000 + 1) / 7);
   }
 
+  // Monday of an ISO week (year, week) as an ISO date. The plan always starts on
+  // a Monday, so the user picks a week + year instead of a specific date.
+  function weekToMondayISO(year, week) {
+    const y = parseInt(year, 10), wk = parseInt(week, 10);
+    if (!y || !wk) return null;
+    // Jan 4 is always in ISO week 1; its weekday anchors the calculation.
+    const jan4 = new Date(Date.UTC(y, 0, 4));
+    const jan4Dow = jan4.getUTCDay() || 7; // 1=Mon … 7=Sun
+    const week1Monday = new Date(jan4);
+    week1Monday.setUTCDate(jan4.getUTCDate() - (jan4Dow - 1) + (wk - 1) * 7);
+    return week1Monday.toISOString().slice(0, 10);
+  }
+
   // ---------- Category badge (protein → Fisk/Kyckling/Kött/Vegetariskt) ----------
   const ICONS = {
     salad: '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 21h10"/><path d="M12 21a9 9 0 0 0 9-9H3a9 9 0 0 0 9 9Z"/><path d="M11.38 12a2.4 2.4 0 0 1-.4-4.77 2.4 2.4 0 0 1 3.2-2.77 2.4 2.4 0 0 1 3.47-.63 2.4 2.4 0 0 1 3.37 3.37 2.4 2.4 0 0 1-1.1 3.7 2.51 2.51 0 0 1 .03 1.1"/><path d="m13 12 4-4"/><path d="M10.9 7.25A3.99 3.99 0 0 0 4 10c0 .73.2 1.41.54 2"/></svg>',
@@ -692,12 +705,32 @@
     if (on) setProgress(0, 1);
   }
 
+  // Resolve the chosen start week + year to the Monday date the plan begins on.
+  function startMondayISO() {
+    return weekToMondayISO($("c-year").value, $("c-week").value);
+  }
+  // Keep the "börjar måndag …" hint in sync with the week/year inputs.
+  function updateStartHint() {
+    const hint = $("c-start-hint");
+    if (!hint) return;
+    const iso = startMondayISO();
+    hint.textContent = iso ? `Planen börjar måndag ${formatDateSV(iso)} (vecka ${isoWeek(iso)}).` : "Välj vecka och år.";
+  }
+  (function setupWeekPick() {
+    const wk = $("c-week"), yr = $("c-year");
+    if (wk && yr) {
+      wk.addEventListener("input", updateStartHint);
+      yr.addEventListener("input", updateStartHint);
+      updateStartHint();
+    }
+  })();
+
   $("btn-generate").addEventListener("click", async () => {
     const btn = $("btn-generate");
     btn.disabled = true;
     app.criteria = readCriteria();
     app.mined = M.mine(app.dayRecords);
-    const startISO = $("c-start").value || null;
+    const startISO = startMondayISO() || null;
     showProgress(true);
     app.plan = await P.generate(app.pool, app.mined, app.criteria, startISO, setProgress);
     showProgress(false);
@@ -1319,7 +1352,7 @@
   // ---------- Download plan ----------
   $("btn-download-plan").addEventListener("click", () => {
     if (!app.plan) { alert("Generera en plan först."); return; }
-    const start = app.plan[0][0].date || $("c-start").value || "";
+    const start = app.plan[0][0].date || "";
     const firstISO = isoWeek(app.plan[0][0].date);
     const lastISO = isoWeek(app.plan[app.plan.length - 1][0].date);
     const name = `skolmat-plan-v${firstISO ?? 1}-v${lastISO ?? app.plan.length}${start ? `-${start}` : ""}.xlsx`;
