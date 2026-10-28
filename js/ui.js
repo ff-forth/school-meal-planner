@@ -750,6 +750,7 @@
     app.state = { plan: app.plan, pool: app.pool, uses: new Map(), lastUsed: new Map() };
     rebuildState();
     app.eval = P.evaluatePlan(app.plan, app.criteria);
+    app.viewWeek = "all"; // land on the plan (Alla) view, not the Pool view
     renderWeekTabs();
     renderPlan();
     renderStatus();
