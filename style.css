@@ -150,14 +150,18 @@ code { background: var(--bg-body); border: 1px solid var(--border-light); border
 .school-select { display: flex; align-items: center; gap: var(--space-2); margin-top: var(--space-2); }
 .school-select .helper-text { margin: 0; white-space: nowrap; }
 .school-select select.inp { max-width: 22rem; }
-/* Component-rule rows (fixed structured inputs) */
-.comp-rules { display: grid; gap: var(--space-1); }
+/* Component-rule rows (fixed structured inputs). The 6-column grid needs a
+   minimum width (the 5 fixed columns total ~360px); on narrow panels the
+   flexible "Komponent" column would otherwise collapse and overlap the next
+   column. So the header + rows sit in a horizontal scroll container. */
+.comp-rules-scroll { overflow-x: auto; min-width: 0; }
+.comp-rules { display: grid; gap: var(--space-1); min-width: 32rem; }
 .comp-rules-hint { margin-bottom: 0.4rem; }
 /* Column header row for the component-rule grid — mirrors the .comp-rule columns
    so each (previously unlabeled) column is self-explanatory. */
 .comp-rule-head {
   display: grid; grid-template-columns: minmax(0, 1fr) 74px 48px 92px 88px 26px;
-  gap: 0.4rem; align-items: center;
+  gap: 0.4rem; align-items: center; min-width: 32rem;
   font-size: 0.7rem; font-weight: 600; color: var(--text-light);
   text-transform: uppercase; letter-spacing: 0.02em;
   margin-bottom: 0.15rem;

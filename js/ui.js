@@ -677,6 +677,10 @@
     if (saveBtn) saveBtn.classList.remove("hidden");
     const reloadBtn = $("btn-reload-pool");
     if (reloadBtn) reloadBtn.classList.remove("hidden");
+    const dlPool = $("btn-download-pool");
+    if (dlPool) dlPool.classList.remove("hidden");
+    const dlPlan = $("btn-download-plan");
+    if (dlPlan) dlPlan.classList.remove("hidden");
     renderPlan();
     window.scrollTo({ top: 0, behavior: "smooth" });
   }

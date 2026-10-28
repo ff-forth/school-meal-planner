@@ -23,6 +23,8 @@
         <input type="file" id="file-plan" accept=".xlsx,.xls" hidden />
         <button id="btn-reload-pool" class="btn btn-ghost hidden">📂 Ladda om pool</button>
         <button id="btn-save" class="btn btn-ghost hidden">💾 Spara</button>
+        <button id="btn-download-pool" class="btn btn-ghost hidden">⬇ Ladda ner pool</button>
+        <button id="btn-download-plan" class="btn btn-ghost hidden">⬇ Ladda ner plan</button>
       </div>
     </div>
   </header>
@@ -101,10 +103,12 @@
           <div class="field">
             <label class="lbl">Komponentregler</label>
             <p class="helper-text comp-rules-hint">Begränsar hur ofta en komponent får förekomma.</p>
-            <div class="comp-rule-head">
-              <span>Komponent</span><span>Regel</span><span>N</span><span>Period</span><span>Önskad dag</span><span></span>
+            <div class="comp-rules-scroll">
+              <div class="comp-rule-head">
+                <span>Komponent</span><span>Regel</span><span>N</span><span>Period</span><span>Önskad dag</span><span></span>
+              </div>
+              <div id="c-component-rules" class="comp-rules"></div>
             </div>
-            <div id="c-component-rules" class="comp-rules"></div>
             <button id="btn-add-comp-rule" class="btn btn-ghost w-full mt-2">+ Lägg till komponent</button>
           </div>
         </div>
