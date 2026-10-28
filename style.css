@@ -152,6 +152,7 @@ code { background: var(--bg-body); border: 1px solid var(--border-light); border
 .school-select select.inp { max-width: 22rem; }
 /* Component-rule rows (fixed structured inputs) */
 .comp-rules { display: grid; gap: var(--space-1); }
+.comp-rules-hint { margin-bottom: 0.4rem; }
 .comp-rule {
   display: grid; grid-template-columns: minmax(0, 1fr) 74px 48px 92px 88px 26px;
   gap: 0.4rem; align-items: center;
