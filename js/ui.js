@@ -1377,6 +1377,13 @@
     IO.downloadWorkbook(IO.exportPool(app.pool), "skolmat-pool.xlsx");
     return true;
   }
+  // Direct download buttons (one file each), alongside the Spara dialog.
+  $("btn-download-pool").addEventListener("click", () => {
+    if (!savePoolFile()) alert("Importera data först.");
+  });
+  $("btn-download-plan").addEventListener("click", () => {
+    if (!savePlanFile()) alert("Generera en plan först.");
+  });
 
   // ---------- Save dialog (choose pool / plan / both) ----------
   function openSaveDialog() {
