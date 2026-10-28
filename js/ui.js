@@ -673,9 +673,8 @@
     $("page-setup").classList.add("hidden");
     $("page-plan").classList.remove("hidden");
     $("btn-back").classList.remove("hidden");
-    $("btn-download-plan").classList.remove("hidden");
-    const poolBtn = $("btn-download-pool");
-    if (poolBtn) poolBtn.classList.remove("hidden");
+    const saveBtn = $("btn-save");
+    if (saveBtn) saveBtn.classList.remove("hidden");
     const reloadBtn = $("btn-reload-pool");
     if (reloadBtn) reloadBtn.classList.remove("hidden");
     renderPlan();
@@ -685,9 +684,8 @@
     $("page-plan").classList.add("hidden");
     $("page-setup").classList.remove("hidden");
     $("btn-back").classList.add("hidden");
-    $("btn-download-plan").classList.add("hidden");
-    const poolBtn = $("btn-download-pool");
-    if (poolBtn) poolBtn.classList.add("hidden");
+    const saveBtn = $("btn-save");
+    if (saveBtn) saveBtn.classList.add("hidden");
     const reloadBtn = $("btn-reload-pool");
     if (reloadBtn) reloadBtn.classList.add("hidden");
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1357,21 +1355,56 @@
     $("status-bar").innerHTML = chips.join(" ");
   }
 
-  // ---------- Download plan ----------
-  $("btn-download-plan").addEventListener("click", () => {
-    if (!app.plan) { alert("Generera en plan först."); return; }
+  // ---------- Save (download) plan / pool as .xlsx ----------
+  // Reusable so both the header "Spara" dialog and any future caller can
+  // trigger a download. Returns true if a file was saved.
+  function savePlanFile() {
+    if (!app.plan) return false;
     const start = app.plan[0][0].date || "";
     const firstISO = isoWeek(app.plan[0][0].date);
     const lastISO = isoWeek(app.plan[app.plan.length - 1][0].date);
     const name = `skolmat-plan-v${firstISO ?? 1}-v${lastISO ?? app.plan.length}${start ? `-${start}` : ""}.xlsx`;
     IO.downloadWorkbook(IO.exportPlan(app.plan, app.criteria), name);
-  });
-
-  // ---------- Download pool (all meals) ----------
-  $("btn-download-pool").addEventListener("click", () => {
-    if (!app.pool) { alert("Importera data först."); return; }
+    return true;
+  }
+  function savePoolFile() {
+    if (!app.pool) return false;
     applyEstimates();
     IO.downloadWorkbook(IO.exportPool(app.pool), "skolmat-pool.xlsx");
+    return true;
+  }
+
+  // ---------- Save dialog (choose pool / plan / both) ----------
+  function openSaveDialog() {
+    const poolOk = !!(app.pool && app.pool.length);
+    const planOk = !!app.plan;
+    if (!poolOk && !planOk) { alert("Inget att spara – ladda in data eller generera en plan först."); return; }
+    $("save-pool").checked = poolOk;
+    $("save-plan").checked = planOk;
+    $("save-pool").disabled = !poolOk;
+    $("save-plan").disabled = !planOk;
+    $("save-opt-pool").classList.toggle("disabled", !poolOk);
+    $("save-opt-plan").classList.toggle("disabled", !planOk);
+    $("save-overlay").classList.remove("hidden");
+  }
+  function closeSaveDialog() {
+    $("save-overlay").classList.add("hidden");
+  }
+  $("btn-save").addEventListener("click", openSaveDialog);
+  $("save-close").addEventListener("click", closeSaveDialog);
+  $("save-cancel").addEventListener("click", closeSaveDialog);
+  $("save-overlay").addEventListener("click", (e) => { if (e.target === $("save-overlay")) closeSaveDialog(); });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !$("save-overlay").classList.contains("hidden")) closeSaveDialog();
+  });
+  $("save-confirm").addEventListener("click", () => {
+    const wantPool = $("save-pool").checked;
+    const wantPlan = $("save-plan").checked;
+    if (!wantPool && !wantPlan) { closeSaveDialog(); return; }
+    // Save pool first, then plan (matches the "ladda poolen först" convention).
+    if (wantPool) savePoolFile();
+    if (wantPlan) savePlanFile();
+    closeSaveDialog();
   });
 
   // ---------- Warn before leaving (nothing is saved to disk) ----------

@@ -22,8 +22,7 @@
         <input type="file" id="file-pool" accept=".xlsx,.xls" hidden />
         <input type="file" id="file-plan" accept=".xlsx,.xls" hidden />
         <button id="btn-reload-pool" class="btn btn-ghost hidden">📂 Ladda om pool</button>
-        <button id="btn-download-pool" class="btn btn-ghost hidden">⬇ Ladda ner pool (.xlsx)</button>
-        <button id="btn-download-plan" class="btn btn-primary hidden">⬇ Ladda ner plan (.xlsx)</button>
+        <button id="btn-save" class="btn btn-ghost hidden">💾 Spara</button>
       </div>
     </div>
   </header>
@@ -180,6 +179,40 @@
       <button id="popover-close" class="popover-close" aria-label="Stäng">×</button>
     </div>
     <div id="popover-list" class="popover-list"></div>
+  </div>
+
+  <!-- Save dialog: choose to save the pool, the plan, or both -->
+  <div id="save-overlay" class="save-overlay hidden">
+    <div class="save-modal" role="dialog" aria-modal="true" aria-labelledby="save-title">
+      <div class="save-modal-head">
+        <span class="save-modal-icon">💾</span>
+        <div class="save-modal-head-copy">
+          <h3 id="save-title" class="save-modal-title">Spara</h3>
+          <p class="save-modal-sub">Välj vad du vill spara som .xlsx-fil. Inget sparas automatiskt.</p>
+        </div>
+        <button id="save-close" class="save-modal-close" aria-label="Stäng">×</button>
+      </div>
+      <div class="save-modal-body">
+        <label class="save-option" id="save-opt-pool">
+          <input type="checkbox" id="save-pool" />
+          <span class="save-option-copy">
+            <span class="save-option-title">Pool (.xlsx)</span>
+            <span class="save-option-desc">Alla måltider med svinn/ätande + komponenter.</span>
+          </span>
+        </label>
+        <label class="save-option" id="save-opt-plan">
+          <input type="checkbox" id="save-plan" />
+          <span class="save-option-copy">
+            <span class="save-option-title">8-veckorsplan (.xlsx)</span>
+            <span class="save-option-desc">Den genererade planen.</span>
+          </span>
+        </label>
+      </div>
+      <div class="save-modal-foot">
+        <button id="save-cancel" class="btn btn-ghost">Avbryt</button>
+        <button id="save-confirm" class="btn btn-primary">💾 Spara valda</button>
+      </div>
+    </div>
   </div>
 
   <!-- Table cell hover tooltip -->
