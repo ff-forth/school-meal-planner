@@ -308,6 +308,7 @@
       return;
     }
     app.plan = plan;
+    app.savedPlan = false; // freshly imported plan is not yet saved to disk
     // Make the swap/replace popover work right after a plan import: it needs
     // criteria + mined patterns, which a fresh generate would have set. Use the
     // current criteria (from the last generate or the defaults) and mine the
@@ -383,6 +384,7 @@
     const records = joined.records.concat(app.poolRecords || []);
     app.dayRecords = records;
     app.pool = records.length ? D.buildMealPool(records) : null;
+    app.savedPool = false; // pool just (re)built from data sources — not yet saved
     applyEstimates();
     syncPlanToPool();
     if (app.viewWeek === "pool") renderPoolOverview();
@@ -743,6 +745,7 @@
     const startISO = startMondayISO() || null;
     showProgress(true);
     app.plan = await P.generate(app.pool, app.mined, app.criteria, startISO, setProgress);
+    app.savedPlan = false; // freshly generated plan is not yet saved to disk
     showProgress(false);
     app.state = { plan: app.plan, pool: app.pool, uses: new Map(), lastUsed: new Map() };
     rebuildState();
@@ -1150,6 +1153,7 @@
       }
       row.addEventListener("click", () => {
         app.plan[w][d].meal = c.meal;
+        markPlanDirty();
         rebuildState();
         app.eval = P.evaluatePlan(app.plan, app.criteria);
         renderPlan();
@@ -1290,6 +1294,7 @@
         const cand = cands.find((c) => c.meal.id === id);
         if (!cand) return;
         app.plan[w][d].meal = cand.meal;
+        markPlanDirty();
         rebuildState();
         app.eval = P.evaluatePlan(app.plan, app.criteria);
         renderStatus();
@@ -1312,6 +1317,7 @@
     const tmp = a.meal;
     a.meal = b.meal;
     b.meal = tmp;
+    markPlanDirty();
     rebuildState();
     app.eval = P.evaluatePlan(app.plan, app.criteria);
     renderPlan();
@@ -1359,6 +1365,10 @@
     $("status-bar").innerHTML = chips.join(" ");
   }
 
+  // Mark the in-memory plan as diverged from what's on disk, so the
+  // before-leave warning nags again after a manual edit post-save.
+  function markPlanDirty() { app.savedPlan = false; }
+
   // ---------- Save (download) plan / pool as .xlsx ----------
   // Reusable so both the header "Spara" dialog and any future caller can
   // trigger a download. Returns true if a file was saved.
@@ -1369,6 +1379,7 @@
     const lastISO = isoWeek(app.plan[app.plan.length - 1][0].date);
     const name = `skolmat-plan-v${firstISO ?? 1}-v${lastISO ?? app.plan.length}${start ? `-${start}` : ""}.xlsx`;
     IO.downloadWorkbook(IO.exportPlan(app.plan, app.criteria), name);
+    app.savedPlan = true; // plan is now on disk — no need to nag before leaving
     return true;
   }
   function savePoolFile() {
@@ -1420,9 +1431,13 @@
 
   // ---------- Warn before leaving (nothing is saved to disk) ----------
   // The plan/pool live only in memory, so a reload or tab close loses them.
-  // Warn when there is unsaved work (a loaded pool or a generated plan).
+  // Only nag when there is genuinely UNSAVED work: a plan or pool that exists
+  // but hasn't been downloaded to disk yet. Once you save, the warning stops —
+  // so it doesn't re-appear after you've already saved.
   window.addEventListener("beforeunload", (e) => {
-    if (app.plan || (app.pool && app.pool.length)) {
+    const unsavedPlan = !!app.plan && !app.savedPlan;
+    const unsavedPool = !!(app.pool && app.pool.length) && !app.savedPool;
+    if (unsavedPlan || unsavedPool) {
       e.preventDefault();
       e.returnValue = ""; // required to show the browser's leave-confirmation
       return "";

@@ -527,53 +527,48 @@ code { background: var(--bg-body); border: 1px solid var(--border-light); border
 }
 .save-overlay.hidden { display: none; }
 .save-modal {
-  width: 100%; max-width: 40rem;
-  background: var(--white); border-radius: 16px;
-  box-shadow: 0 24px 48px -12px rgba(17, 24, 39, 0.28), 0 8px 16px -8px rgba(17, 24, 39, 0.16);
-  overflow: hidden;
+  width: 100%; max-width: 30rem;
+  background: var(--white); border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg); overflow: hidden;
   animation: save-pop-in 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .save-modal-head {
-  display: flex; align-items: flex-start; gap: 1rem;
-  padding: 1.5rem 1.75rem; border-bottom: 1px solid var(--border-light);
+  display: flex; align-items: flex-start; gap: 0.75rem;
+  padding: var(--space-3); border-bottom: 1px solid var(--border-light);
   position: relative;
 }
 .save-modal-icon {
-  flex: none; width: 3.25rem; height: 3.25rem; border-radius: 14px;
+  flex: none; width: 2.5rem; height: 2.5rem; border-radius: 9999px;
   background: var(--primary-subtle); color: var(--primary);
   display: inline-flex; align-items: center; justify-content: center;
-  font-size: 1.75rem;
+  font-size: 1.25rem;
 }
-.save-modal-head-copy { flex: 1; min-width: 0; padding-right: 2rem; }
-.save-modal-title { margin: 0; font-size: 1.35rem; font-weight: 700; color: var(--black); letter-spacing: -0.01em; }
-.save-modal-sub { margin: 0.4rem 0 0; font-size: 0.95rem; color: var(--text-muted); line-height: 1.5; }
+.save-modal-head-copy { flex: 1; min-width: 0; padding-right: 1.5rem; }
+.save-modal-title { margin: 0; font-size: 1.05rem; font-weight: 700; color: var(--black); }
+.save-modal-sub { margin: 0.2rem 0 0; font-size: 0.82rem; color: var(--text-muted); line-height: 1.4; }
 .save-modal-close {
-  position: absolute; top: 1.1rem; right: 1.1rem;
-  width: 2rem; height: 2rem; border-radius: 9999px;
-  background: var(--bg-body); color: var(--text-muted);
-  border: none; font-size: 1.3rem; line-height: 1; cursor: pointer;
-  display: inline-flex; align-items: center; justify-content: center;
-  transition: background var(--motion), color var(--motion);
+  position: absolute; top: var(--space-2); right: var(--space-2);
+  background: none; border: none; color: var(--text-light);
+  font-size: 1.4rem; line-height: 1; cursor: pointer;
 }
-.save-modal-close:hover { background: var(--border-light); color: var(--text-main); }
-.save-modal-body { padding: 1.5rem 1.75rem; display: grid; gap: 0.75rem; }
+.save-modal-close:hover { color: var(--text-main); }
+.save-modal-body { padding: var(--space-3); display: grid; gap: 0.6rem; }
 .save-option {
-  display: flex; align-items: center; gap: 0.9rem;
-  padding: 1rem 1.1rem; border: 1px solid var(--border-light);
-  border-radius: 12px; cursor: pointer;
+  display: flex; align-items: center; gap: 0.7rem;
+  padding: 0.7rem 0.8rem; border: 1px solid var(--border-light);
+  border-radius: var(--radius-md); cursor: pointer;
   transition: border-color var(--motion), background var(--motion), box-shadow var(--motion);
 }
 .save-option:hover { border-color: var(--primary-outline); background: var(--bg-body); }
 .save-option:has(input:checked) { border-color: var(--primary); background: var(--primary-subtle); box-shadow: inset 0 0 0 1px var(--primary); }
-.save-option input { accent-color: var(--primary); width: 1.35rem; height: 1.35rem; flex: none; }
-.save-option-copy { display: grid; gap: 0.25rem; min-width: 0; }
-.save-option-title { font-size: 1.05rem; font-weight: 600; color: var(--black); }
-.save-option-desc { font-size: 0.88rem; color: var(--text-muted); }
+.save-option input { accent-color: var(--primary); width: 1.1rem; height: 1.1rem; flex: none; }
+.save-option-copy { display: grid; gap: 0.1rem; min-width: 0; }
+.save-option-title { font-size: 0.9rem; font-weight: 600; color: var(--black); }
+.save-option-desc { font-size: 0.76rem; color: var(--text-muted); }
 .save-option.disabled { opacity: 0.5; cursor: not-allowed; }
 .save-option.disabled:hover { border-color: var(--border-light); background: transparent; box-shadow: none; }
 .save-modal-foot {
-  display: flex; justify-content: flex-end; gap: 0.75rem;
-  padding: 1.25rem 1.75rem; border-top: 1px solid var(--border-light);
+  display: flex; justify-content: flex-end; gap: var(--space-1);
+  padding: var(--space-2) var(--space-3); border-top: 1px solid var(--border-light);
   background: var(--bg-header);
 }
-.save-modal-foot .btn { font-size: 0.95rem; padding: 0.65rem 1.25rem; }
