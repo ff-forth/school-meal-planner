@@ -676,6 +676,8 @@
     $("btn-download-plan").classList.remove("hidden");
     const poolBtn = $("btn-download-pool");
     if (poolBtn) poolBtn.classList.remove("hidden");
+    const reloadBtn = $("btn-reload-pool");
+    if (reloadBtn) reloadBtn.classList.remove("hidden");
     renderPlan();
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -686,9 +688,14 @@
     $("btn-download-plan").classList.add("hidden");
     const poolBtn = $("btn-download-pool");
     if (poolBtn) poolBtn.classList.add("hidden");
+    const reloadBtn = $("btn-reload-pool");
+    if (reloadBtn) reloadBtn.classList.add("hidden");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
   $("btn-back").addEventListener("click", showSetupPage);
+  // Reload the pool from step 4 without going back to the setup page. Drives the
+  // same hidden pool file input; loadPoolFromRows re-renders the visible plan.
+  $("btn-reload-pool").addEventListener("click", () => $("file-pool").click());
 
   // ---------- Generate ----------
   function setProgress(done, total) {
