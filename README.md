@@ -62,12 +62,58 @@ in.
 **Waste per eater** is computed as `total waste (kg) / eaters × 1000` (g per
 eater per day), joined on date.
 
-### Skolmat (`.json`)
+### Skolmat (`.json`) — getting the files
 
 You can also import `.json` files exported from **skolmat.info** — pick several
-at once and they are merged per day. The bookmarklet that produces those files
-lives in `tools/skolmat-bookmarklet.md` (with the bookmarklet source in
-`tools/skolmat-bookmarklet.js`).
+at once and they are merged per day. The browser can't call the API directly
+from the planner (CORS), so a small **bookmarklet** runs *on* the
+[skolmat.info](https://www.skolmat.info) page, fetches the chosen weeks, and
+saves a `.json` file you then import. The full write-up lives in
+[`tools/skolmat-bookmarklet.md`](tools/skolmat-bookmarklet.md) (source in
+[`tools/skolmat-bookmarklet.js`](tools/skolmat-bookmarklet.js)); the setup is
+below.
+
+**1 · Create the bookmark**
+
+1. Right-click your bookmarks bar (or "Bookmarks") → **Add bookmark** / **New bookmark**.
+2. Name: `Skolmat → JSON`
+3. In the **URL** field, paste the whole line below as a single line (it's the
+   same line in `tools/skolmat-bookmarklet.js` that starts with `javascript:`).
+
+```
+javascript:(function(){var m=location.search.match(/facilityId=([A-Za-z0-9-]+)/);var id=m?m[1]:null;if(!id){alert('Öppna en matsedelsida med facilityId i adressen.');return;}function isoW(d){var t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));t.setUTCDate(t.getUTCDate()+4-(t.getUTCDay()||7));return{y:t.getUTCFullYear(),w:Math.ceil(((t-new Date(Date.UTC(t.getUTCFullYear(),0,1)))/864e5+1)/7)};}var now=isoW(new Date());var sw=prompt('Startvecka (ISO, t.ex. 38):',now.w);if(sw===null)return;var sy=prompt('År:',now.y);if(sy===null)return;var n=prompt('Antal veckor (standard 8):','8');if(n===null)return;sw=parseInt(sw,10);sy=parseInt(sy,10);n=parseInt(n,10);if(!sw||!sy||!n){alert('Ogiltigt värde.');return;}var base=document.createElement('div');base.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#fff;color:#000;font:13px sans-serif;padding:8px;box-shadow:0 2px 6px rgba(0,0,0,.3)';base.textContent='Hämtar '+n+' veckor...';document.body.appendChild(base);var out=[];(async function(){for(var i=0;i<n;i++){var url='/api/public/matsedlar/'+encodeURIComponent(id)+'?year='+sy+'&week='+(sw+i);try{var r=await fetch(url,{headers:{'Accept':'application/json'}});var j=await r.json();if(j&&j.ok)out.push(j);}catch(e){}}base.remove();var nm=(out.length&&out[0].facility&&out[0].facility.name)||'';var slug=nm.replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,'').toLowerCase();var blob=new Blob([JSON.stringify(out,null,2)],{type:'application/json'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='skolmat-'+sy+'-v'+sw+'-v'+(sw+n-1)+(slug?'-'+slug:'')+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(a.href);},1000);alert('Klart! Hamtade '+out.length+' av '+n+' veckor. Spara filen och importera den i planeraren.');})();})();
+```
+
+**2 · Fetch the meals**
+
+1. Open the menu on [skolmat.info](https://www.skolmat.info) — the address must
+   contain `facilityId=...` (e.g.
+   `https://www.skolmat.info/matsedlar?countyCode=10&municipalityId=1081&facilityId=1C59B6EA-...`).
+2. Click the **Skolmat → JSON** bookmark.
+3. Answer the prompts:
+   - **Startvecka (ISO)** — the week the plan should start in (default = current week).
+   - **År** — e.g. `2026`.
+   - **Antal veckor** — default `8`, change freely.
+4. A file `skolmat-<year>-v<start>-v<end>-<school>.json` downloads automatically
+   (the school name is taken from the page, e.g.
+   `skolmat-2026-v47-v54-Aspöskolan.json`).
+
+**3 · Import into the planner**
+
+In **step 1 (Data)** click **📥 Importera matsedel (JSON)** and choose the file.
+The planner builds the meal pool from the current meals (regular dish +
+vegetarian alternative per day) and you can generate the 8-week plan as usual.
+
+**Details**
+
+- Fetches `/api/public/matsedlar/{facilityId}?year=YYYY&week=NN` per week
+  (public API, no login).
+- Weeks are **ISO weeks** (same as vecka.nu) — the same numbering used in the
+  planner.
+- The file holds one object per week:
+  `{ ok, facility, week: { year, weekNumber, days: { MONDAY: { isOpen, rows: [{ text, allergens }] } } } }`.
+- A missing week (e.g. a future week not yet published) is skipped — the
+  bookmarklet reports how many of the weeks were fetched.
 
 ---
 
