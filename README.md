@@ -140,24 +140,10 @@ js/
   mining.js                 Pattern mining over historical meals
   planner.js                8-week plan generation + evaluation
   waste-lookup.js           Per-school waste figures
-  sample-real.js            Bundled offline sample (dev/demo)
   ui.js                     All UI wiring
 tools/
   skolmat-bookmarklet.md    How to use the Skolmat bookmarklet
   skolmat-bookmarklet.js    The bookmarklet source
-  generate-input-files.js   (local-only, gitignored) one-off generator for
-                            data/processed/ — not part of the app
 data/                       (gitignored) your working data files
 ```
 
----
-
-## Notes
-
-- **`data/` is gitignored** and holds your working data — it is never
-  committed or published.
-- **`tools/generate-input-files.js` is gitignored** (local-only). It was a
-  one-off script that produced `data/processed/`; it is not needed to run the
-  app.
-- **No backend, no database, no build step.** The only runtime dependency is
-  the SheetJS CDN script.

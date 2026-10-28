@@ -128,12 +128,6 @@
     return Array.from(map.values());
   }
 
-  // Load the bundled offline sample (window.SampleReal) into a pool.
-  function loadSampleReal() {
-    const recs = (global.SampleReal && global.SampleReal.dayRecords) || [];
-    return buildMealPool(recs);
-  }
-
   // ---- Combination-based waste baseline ----
   // A meal is a COMBINATION of components (protein + starch + sauce + …), and
   // the interaction matters: "potato + korv" wastes a different amount than
@@ -259,7 +253,6 @@
     isPlaceholder,
     normalizeMeal,
     buildMealPool,
-    loadSampleReal,
     buildWasteBaseline,
     estimateWaste,
     applyWasteEstimates,
