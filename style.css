@@ -82,8 +82,12 @@ code { background: var(--bg-body); border: 1px solid var(--border-light); border
   align-items: start;
 }
 .page { display: grid; gap: var(--space-3); min-width: 0; }
-/* Setup page: the three step panels side by side on wide screens. */
-#page-setup { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); align-items: start; }
+/* Setup page: the three step panels. Each panel needs to be wide enough for
+   the 6-column component-rule table (~512px), so the minimum is set above
+   that — on typical screens the panels wrap to 2-across (1 on phones) rather
+   than being squeezed into a narrow 3-across where the table's right side
+   would be clipped. */
+#page-setup { grid-template-columns: repeat(auto-fit, minmax(560px, 1fr)); align-items: start; }
 @media (max-width: 720px) {
   #page-setup { grid-template-columns: 1fr; }
 }
