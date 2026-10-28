@@ -1374,6 +1374,17 @@
     IO.downloadWorkbook(IO.exportPool(app.pool), "skolmat-pool.xlsx");
   });
 
+  // ---------- Warn before leaving (nothing is saved to disk) ----------
+  // The plan/pool live only in memory, so a reload or tab close loses them.
+  // Warn when there is unsaved work (a loaded pool or a generated plan).
+  window.addEventListener("beforeunload", (e) => {
+    if (app.plan || (app.pool && app.pool.length)) {
+      e.preventDefault();
+      e.returnValue = ""; // required to show the browser's leave-confirmation
+      return "";
+    }
+  });
+
   // ---------- Init ----------
   setupRealDropzone();
   setupSkolmatImport();
