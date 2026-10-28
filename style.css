@@ -82,12 +82,11 @@ code { background: var(--bg-body); border: 1px solid var(--border-light); border
   align-items: start;
 }
 .page { display: grid; gap: var(--space-3); min-width: 0; }
-/* Setup page: the three step panels. Each panel needs to be wide enough for
-   the 6-column component-rule table (~512px), so the minimum is set above
-   that — on typical screens the panels wrap to 2-across (1 on phones) rather
-   than being squeezed into a narrow 3-across where the table's right side
-   would be clipped. */
-#page-setup { grid-template-columns: repeat(auto-fit, minmax(560px, 1fr)); align-items: start; }
+/* Setup page: the three step panels on one row. Each panel is wide enough for
+   the compacted 6-column component-rule table (~400px), so on a typical
+   desktop all three sit side by side; on narrower screens they wrap to 2, then
+   1, instead of being squeezed into a row where the table's right side clips. */
+#page-setup { grid-template-columns: repeat(auto-fit, minmax(440px, 1fr)); align-items: start; }
 @media (max-width: 720px) {
   #page-setup { grid-template-columns: 1fr; }
 }
@@ -155,26 +154,27 @@ code { background: var(--bg-body); border: 1px solid var(--border-light); border
 .school-select .helper-text { margin: 0; white-space: nowrap; }
 .school-select select.inp { max-width: 22rem; }
 /* Component-rule rows (fixed structured inputs). The 6-column grid needs a
-   minimum width (the 5 fixed columns total ~360px); on narrow panels the
-   flexible "Komponent" column would otherwise collapse and overlap the next
-   column. So the header + rows sit in a horizontal scroll container. */
+   minimum width so the flexible "Komponent" column can't collapse and overlap
+   the next column; the header + rows sit in a horizontal scroll container as
+   a safety net on very narrow panels. Columns are compact so the table fits a
+   ~440px panel (the 3-across setup layout) without clipping. */
 .comp-rules-scroll { overflow-x: auto; min-width: 0; }
-.comp-rules { display: grid; gap: var(--space-1); min-width: 32rem; }
+.comp-rules { display: grid; gap: var(--space-1); min-width: 25rem; }
 .comp-rules-hint { margin-bottom: 0.4rem; }
 /* Column header row for the component-rule grid — mirrors the .comp-rule columns
    so each (previously unlabeled) column is self-explanatory. */
 .comp-rule-head {
-  display: grid; grid-template-columns: minmax(0, 1fr) 74px 48px 92px 88px 26px;
-  gap: 0.4rem; align-items: center; min-width: 32rem;
-  font-size: 0.7rem; font-weight: 600; color: var(--text-light);
+  display: grid; grid-template-columns: minmax(0, 1fr) 64px 40px 78px 76px 24px;
+  gap: 0.3rem; align-items: center; min-width: 25rem;
+  font-size: 0.66rem; font-weight: 600; color: var(--text-light);
   text-transform: uppercase; letter-spacing: 0.02em;
   margin-bottom: 0.15rem;
 }
 .comp-rule {
-  display: grid; grid-template-columns: minmax(0, 1fr) 74px 48px 92px 88px 26px;
-  gap: 0.4rem; align-items: center;
+  display: grid; grid-template-columns: minmax(0, 1fr) 64px 40px 78px 76px 24px;
+  gap: 0.3rem; align-items: center;
 }
-.comp-rule .inp { padding: 0.3rem 0.4rem; font-size: 0.8rem; box-sizing: border-box; }
+.comp-rule .inp { padding: 0.25rem 0.35rem; font-size: 0.75rem; box-sizing: border-box; }
 .comp-rule select.inp { width: 100%; }
 .comp-rule input[type="number"].inp { text-align: center; }
 .comp-rule .comp-rule-remove {
