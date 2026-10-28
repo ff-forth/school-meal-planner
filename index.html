@@ -66,10 +66,8 @@
 
           <h3 class="input-section-title">Skolmat (.json)</h3>
           <p class="helper-text">
-            <b>skolmat.info:</b> ladda ner <code>.json</code>-filer med rätter (via bokmärket i
-            <code>tools/skolmat-bookmarklet.md</code>) och importera dem här – du kan välja flera
-            filer (t.ex. en per vecka) samtidigt; de slås ihop per dag och ger aktuella rätter +
-            vegetariska alternativ.
+            Importera <code>.json</code>-filer från <b>skolmat.info</b> (via bokmärket i
+            <code>tools/skolmat-bookmarklet.md</code>). Välj gärna flera filer samtidigt – de slås ihop per dag.
           </p>
           <div class="btn-row">
             <input type="file" id="file-skolmat" accept=".json,application/json" multiple hidden />
@@ -102,12 +100,10 @@
           </div>
           <div class="field">
             <label class="lbl">Komponentregler</label>
-            <p class="helper-text comp-rules-hint">
-              Begränsar hur ofta en komponent får förekomma. Välj
-              <b>max</b> (högst N), <b>minst</b> (minst N) eller <b>exakt</b> (exakt N) och
-              perioden <b>vecka</b> eller <b>14 dagar</b>. Sista kolumnen är en valfri
-              <b>önskad dag</b> – komponenten föredras då på den dagen (t.ex. soppa på torsdag).
-            </p>
+            <p class="helper-text comp-rules-hint">Begränsar hur ofta en komponent får förekomma.</p>
+            <div class="comp-rule-head">
+              <span>Komponent</span><span>Regel</span><span>N</span><span>Period</span><span>Önskad dag</span><span></span>
+            </div>
             <div id="c-component-rules" class="comp-rules"></div>
             <button id="btn-add-comp-rule" class="btn btn-ghost w-full mt-2">+ Lägg till komponent</button>
           </div>
