@@ -108,9 +108,12 @@
 
   // ---------- Soup badge (soppa) — for quick skimming ----------
   function soupOf(meal) {
+    // Read only components.prep (like categoryOf/starchOf) — NOT the meal name.
+    // A name fallback would tag a dish as "Soppa" whenever its name contains
+    // "soppa", which is wrong for component-less meals (e.g. a plan loaded
+    // without a pool, where components is {}).
     const prep = (meal.components && meal.components.prep ? meal.components.prep : "").toLowerCase();
-    const name = (meal.name ? meal.name : "").toLowerCase();
-    if (/soppa/.test(prep) || /soppa/.test(name)) return { label: "Soppa", icon: "soup", cls: "badge-info" };
+    if (/soppa/.test(prep)) return { label: "Soppa", icon: "soup", cls: "badge-info" };
     return null;
   }
 
