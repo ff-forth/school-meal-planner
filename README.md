@@ -138,7 +138,7 @@ stops; editing the plan again brings it back.
 index.html                  App shell + UI
 style.css                   Styling
 js/
-  data.js                   Data model, meal pool, sample loader
+  data.js                   Data model, meal pool, waste baseline
   decompose.js              Meal → component decomposition
   import-real.js            .xlsx/.json readers + filename classifier
   xlsx-io.js                SheetJS import/export (pool & plan workbooks)
